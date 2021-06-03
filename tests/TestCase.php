@@ -1,8 +1,8 @@
 <?php
 
-namespace aclai-lab\piton\Tests;
+namespace aclai\piton\Tests;
 
-use aclai-lab\piton\PitonBaseServiceProvider;
+use aclai\piton\PitonBaseServiceProvider;
 
 class TestCase extends \Orchestra\Testbench\TestCase
 {

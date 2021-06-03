@@ -1,8 +1,8 @@
 <?php
 
-namespace aclai-lab\piton\Attributes;
+namespace aclai\piton\Attributes;
 
-use aclai-lab\piton\Facades\Utils;
+use aclai\piton\Facades\Utils;
 
 /**
  * Discrete attribute

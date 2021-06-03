@@ -11,7 +11,7 @@ Add this github project as a repository in composer.json
 "repositories": [
 	{
 		"type": "vcs",
-		"url": "https://github.com/aclai-lab/piton"
+		"url": "https://github.com/aclai/piton"
 	}
 ],    
 
@@ -21,7 +21,7 @@ Add the package in require section:
 
 ```
 "require": {
-	"aclai-lab/piton": "master"
+	"aclai/piton": "master"
 }
 ```
 

@@ -1,12 +1,12 @@
 <?php
 
-namespace aclai-lab\piton\Tests;
+namespace aclai\piton\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-use aclai-lab\piton\ClassModel;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\Learners\WittgensteinLearner;
+use aclai\piton\ClassModel;
+use aclai\piton\Instances\Instances;
+use aclai\piton\Learners\WittgensteinLearner;
 
 class WittgensteinLearnerTest extends TestCase
 {

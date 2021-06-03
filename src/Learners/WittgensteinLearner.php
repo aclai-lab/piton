@@ -1,12 +1,12 @@
 <?php
 
-namespace aclai-lab\piton\Learners;
+namespace aclai\piton\Learners;
 
 use Illuminate\Support\Facades\Schema;
-use aclai-lab\piton\DiscriminativeModels\RuleBasedModel;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\DiscriminativeModels\DiscriminativeModel;
+use aclai\piton\DiscriminativeModels\RuleBasedModel;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
+use aclai\piton\DiscriminativeModels\DiscriminativeModel;
 
 /*
  * Interface for wittgenstein learner.

@@ -1,12 +1,12 @@
 <?php
 
-namespace aclai-lab\piton\RuleStats;
+namespace aclai\piton\RuleStats;
 
-use aclai-lab\piton\Attributes\ContinuousAttribute;
-use aclai-lab\piton\Attributes\DiscreteAttribute;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\Rules\Rule;
+use aclai\piton\Attributes\ContinuousAttribute;
+use aclai\piton\Attributes\DiscreteAttribute;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
+use aclai\piton\Rules\Rule;
 
 /**
  * This class implements the statistics functions used in the propositional rule

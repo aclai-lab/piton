@@ -1,9 +1,9 @@
 <?php
 
-namespace aclai-lab\piton\Learners;
+namespace aclai\piton\Learners;
 
-use aclai-lab\piton\DiscriminativeModels\DiscriminativeModel;
-use aclai-lab\piton\Instances\Instances;
+use aclai\piton\DiscriminativeModels\DiscriminativeModel;
+use aclai\piton\Instances\Instances;
 
 /*
  * Interface for learner/optimizers

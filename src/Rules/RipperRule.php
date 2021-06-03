@@ -1,11 +1,11 @@
 <?php
 
-namespace aclai-lab\piton\Rules;
+namespace aclai\piton\Rules;
 
 use Exception;
-use aclai-lab\piton\Antecedents\Antecedent;
-use aclai-lab\piton\Antecedents\ContinuousAntecedent;
-use aclai-lab\piton\Instances\Instances;
+use aclai\piton\Antecedents\Antecedent;
+use aclai\piton\Antecedents\ContinuousAntecedent;
+use aclai\piton\Instances\Instances;
 
 /**
  * Rule class for RIPPER algorithm

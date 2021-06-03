@@ -1,14 +1,14 @@
 <?php
 
-namespace aclai-lab\piton\Learners;
+namespace aclai\piton\Learners;
 
 use Exception;
-use aclai-lab\piton\DiscriminativeModels\RuleBasedModel;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\DiscriminativeModels\DiscriminativeModel;
-use aclai-lab\piton\Rules\RipperRule;
-use aclai-lab\piton\RuleStats\RuleStats;
+use aclai\piton\DiscriminativeModels\RuleBasedModel;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
+use aclai\piton\DiscriminativeModels\DiscriminativeModel;
+use aclai\piton\Rules\RipperRule;
+use aclai\piton\RuleStats\RuleStats;
 
 /*
  * Repeated Incremental Pruning to Produce Error Reduction (RIPPER),

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace aclai-lab\piton;
+namespace aclai\piton;
 
 class Piton
 {

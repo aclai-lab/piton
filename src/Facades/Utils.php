@@ -1,6 +1,6 @@
 <?php
 
-namespace aclai-lab\piton\Facades;
+namespace aclai\piton\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

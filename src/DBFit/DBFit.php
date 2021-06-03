@@ -1,6 +1,6 @@
 <?php
 
-namespace aclai-lab\piton\DBFit;
+namespace aclai\piton\DBFit;
 
 /*
  * This class can be used to learn intelligent classifier models from a MySQL database.
@@ -40,16 +40,16 @@ namespace aclai-lab\piton\DBFit;
 use DateTime;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use aclai-lab\piton\Attributes\ContinuousAttribute;
-use aclai-lab\piton\Attributes\DiscreteAttribute;
-use aclai-lab\piton\ClassModel;
-use aclai-lab\piton\DiscriminativeModels\DiscriminativeModel;
-use aclai-lab\piton\DiscriminativeModels\RuleBasedModel;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\Learners\Learner;
-use aclai-lab\piton\ModelVersion;
-use aclai-lab\piton\RuleStats\RuleStats;
+use aclai\piton\Attributes\ContinuousAttribute;
+use aclai\piton\Attributes\DiscreteAttribute;
+use aclai\piton\ClassModel;
+use aclai\piton\DiscriminativeModels\DiscriminativeModel;
+use aclai\piton\DiscriminativeModels\RuleBasedModel;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
+use aclai\piton\Learners\Learner;
+use aclai\piton\ModelVersion;
+use aclai\piton\RuleStats\RuleStats;
 
 class DBFit
 {
@@ -490,7 +490,7 @@ class DBFit
 
             /* Build instances for this output attribute */
             $outputAttr = clone $final_attributes[$i_prob];
-            $inputAttrs = array_map("aclai-lab\\piton\\Utils::clone_object", array_slice($final_attributes, $numOutputAttributes));
+            $inputAttrs = array_map("aclai\\piton\\Utils::clone_object", array_slice($final_attributes, $numOutputAttributes));
 
             /*if($idModelVersion !== null) {
                 $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
@@ -820,7 +820,7 @@ class DBFit
             $cols_str[] = $this->identifierColumnName . " AS " . $this->getColNickname($this->identifierColumnName);
         }
 
-        $sql .= "SELECT " . ($distinct ? "DISTINCT " : "") . Utils::mysql_list($cols_str, "aclai-lab\\piton\\Utils::noop");
+        $sql .= "SELECT " . ($distinct ? "DISTINCT " : "") . Utils::mysql_list($cols_str, "aclai\\piton\\Utils::noop");
 
         /* Join all input tables AND the output tables needed, depending on the recursion depth */
         $tables = $this->inputTables;
@@ -2102,7 +2102,7 @@ class DBFit
             // TODO use prepare statement here and then mysql_select
             //   https://www.php.net/manual/en/mysqli.prepare.php
             $sql = "SELECT * FROM `information_schema`.`columns` WHERE `table_name` IN "
-                . Utils::mysql_set(array_map([$this, "aclai-lab\\piton\\DBFit\\DBFit::getTableName"], $tables))
+                . Utils::mysql_set(array_map([$this, "aclai\\piton\\DBFit\\DBFit::getTableName"], $tables))
                 . " AND (COLUMN_NAME = '" . $this->getColumnName($column) . "'"
                 . " OR CONCAT(TABLE_NAME,'.',COLUMN_NAME) = '" . $this->getColumnName($column)
                 . "')";

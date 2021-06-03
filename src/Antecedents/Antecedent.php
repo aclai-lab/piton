@@ -1,12 +1,12 @@
 <?php
 
-namespace aclai-lab\piton\Antecedents;
+namespace aclai\piton\Antecedents;
 
-use aclai-lab\piton\Attributes\Attribute;
-use aclai-lab\piton\Attributes\ContinuousAttribute;
-use aclai-lab\piton\Attributes\DiscreteAttribute;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
+use aclai\piton\Attributes\Attribute;
+use aclai\piton\Attributes\ContinuousAttribute;
+use aclai\piton\Attributes\DiscreteAttribute;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
 
 /**
  * A single antecedent in the rule, composed of an attribute and a value for it.

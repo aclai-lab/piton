@@ -1,20 +1,20 @@
 <?php
 
-namespace aclai-lab\piton\DiscriminativeModels;
+namespace aclai\piton\DiscriminativeModels;
 
 use Illuminate\Support\Facades\DB;
-use aclai-lab\piton\Antecedents\Antecedent;
-use aclai-lab\piton\Antecedents\ContinuousAntecedent;
-use aclai-lab\piton\Antecedents\DiscreteAntecedent;
-use aclai-lab\piton\Attributes\Attribute;
-use aclai-lab\piton\Attributes\DiscreteAttribute;
-use aclai-lab\piton\ClassModel;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Learners\Learner;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\ModelVersion;
-use aclai-lab\piton\Rules\ClassificationRule;
-use aclai-lab\piton\Rules\Rule;
+use aclai\piton\Antecedents\Antecedent;
+use aclai\piton\Antecedents\ContinuousAntecedent;
+use aclai\piton\Antecedents\DiscreteAntecedent;
+use aclai\piton\Attributes\Attribute;
+use aclai\piton\Attributes\DiscreteAttribute;
+use aclai\piton\ClassModel;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Learners\Learner;
+use aclai\piton\Instances\Instances;
+use aclai\piton\ModelVersion;
+use aclai\piton\Rules\ClassificationRule;
+use aclai\piton\Rules\Rule;
 
 class RuleBasedModel extends DiscriminativeModel
 {

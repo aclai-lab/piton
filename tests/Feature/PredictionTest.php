@@ -1,13 +1,13 @@
 <?php
 
-namespace aclai-lab\piton\Tests;
+namespace aclai\piton\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-use aclai-lab\piton\ClassModel;
-use aclai-lab\piton\DBFit\DBFit;
-use aclai-lab\piton\DiscriminativeModels\RuleBasedModel;
-use aclai-lab\piton\PitonBaseServiceProvider;
+use aclai\piton\ClassModel;
+use aclai\piton\DBFit\DBFit;
+use aclai\piton\DiscriminativeModels\RuleBasedModel;
+use aclai\piton\PitonBaseServiceProvider;
 
 class PredictionTest extends TestCase
 {

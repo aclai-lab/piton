@@ -1,6 +1,6 @@
 <?php
 
-namespace aclai-lab\piton\Attributes;
+namespace aclai\piton\Attributes;
 
 use DateTime;
 

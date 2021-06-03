@@ -1,16 +1,16 @@
 <?php
 
-namespace aclai-lab\piton\Learners;
+namespace aclai\piton\Learners;
 
 use Illuminate\Support\Facades\Schema;
 
 use Illuminate\Validation\Rule;
-use aclai-lab\piton\Attributes\Attribute;
-use aclai-lab\piton\Attributes\DiscreteAttribute;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\DiscriminativeModels\RuleBasedModel;
-use aclai-lab\piton\DiscriminativeModels\DiscriminativeModel;
+use aclai\piton\Attributes\Attribute;
+use aclai\piton\Attributes\DiscreteAttribute;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
+use aclai\piton\DiscriminativeModels\RuleBasedModel;
+use aclai\piton\DiscriminativeModels\DiscriminativeModel;
 
 /*
  * Interface for Sklearn learner.

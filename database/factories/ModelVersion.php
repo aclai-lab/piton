@@ -1,6 +1,6 @@
 <?php
 
-use aclai-lab\piton\ModelVersion;
+use aclai\piton\ModelVersion;
 
 $factory->define(ModelVersion::class, function (Faker\Generator $faker) {
 	return [

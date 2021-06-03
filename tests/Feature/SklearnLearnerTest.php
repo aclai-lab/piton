@@ -1,11 +1,11 @@
 <?php
 
-namespace aclai-lab\piton\Tests;
+namespace aclai\piton\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\Learners\SklearnLearner;
+use aclai\piton\Instances\Instances;
+use aclai\piton\Learners\SklearnLearner;
 
 class SklearnLearnerTest extends TestCase
 {

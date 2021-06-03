@@ -1,11 +1,11 @@
 <?php
 
-namespace aclai-lab\piton\Instances;
+namespace aclai\piton\Instances;
 
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Attributes\Attribute;
-use aclai-lab\piton\Attributes\DiscreteAttribute;
-use aclai-lab\piton\Attributes\ContinuousAttribute;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Attributes\Attribute;
+use aclai\piton\Attributes\DiscreteAttribute;
+use aclai\piton\Attributes\ContinuousAttribute;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -918,7 +918,7 @@ class Instances
 
     public function __clone()
     {
-        $this->attributes = array_map("aclai-lab\\piton\\Facades\\Utils::clone_object", $this->attributes);
+        $this->attributes = array_map("aclai\\piton\\Facades\\Utils::clone_object", $this->attributes);
     }
 
     /**

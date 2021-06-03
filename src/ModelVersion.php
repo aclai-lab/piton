@@ -1,6 +1,6 @@
 <?php
 
-namespace aclai-lab\piton;
+namespace aclai\piton;
 
 use Illuminate\Database\Eloquent\Model;
 

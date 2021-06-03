@@ -1,5 +1,5 @@
 {
-    "name": "aclai-lab/piton",
+    "name": "aclai/piton",
     "description": "A set of classification learners for the Laravel framework.",
     "license": "MIT",
     "authors": [
@@ -13,18 +13,18 @@
     },
     "autoload": {
         "psr-4": {
-            "aclai-lab\\piton\\": "src/"
+            "aclai\\piton\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "aclai-lab\\piton\\Tests\\": "tests/"
+            "aclai\\piton\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "aclai-lab\\piton\\PitonBaseServiceProvider"
+                "aclai\\piton\\PitonBaseServiceProvider"
             ]
         }
     },

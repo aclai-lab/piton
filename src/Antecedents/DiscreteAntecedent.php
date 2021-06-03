@@ -1,11 +1,11 @@
 <?php
 
-namespace aclai-lab\piton\Antecedents;
+namespace aclai\piton\Antecedents;
 
-use aclai-lab\piton\Attributes\Attribute;
-use aclai-lab\piton\Attributes\DiscreteAttribute;
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
+use aclai\piton\Attributes\Attribute;
+use aclai\piton\Attributes\DiscreteAttribute;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
 
 /**
  * An antecedent with discrete attribute

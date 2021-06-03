@@ -1,11 +1,11 @@
 <?php
 
-namespace aclai-lab\piton\Rules;
+namespace aclai\piton\Rules;
 
-use aclai-lab\piton\Facades\Utils;
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\Attributes\Attribute;
-use aclai-lab\piton\Antecedents\Antecedent;
+use aclai\piton\Facades\Utils;
+use aclai\piton\Instances\Instances;
+use aclai\piton\Attributes\Attribute;
+use aclai\piton\Antecedents\Antecedent;
 
 /**
  * A single classification rule that predicts a specified class value.
@@ -143,7 +143,7 @@ class ClassificationRule extends Rule
             }, $ants_str_arr);
         }
 
-        $rule = new \aclai-lab\piton\Rules\ClassificationRule($consequent);
+        $rule = new \aclai\piton\Rules\ClassificationRule($consequent);
         $rule->setAntecedents($antecedents);
         $ruleAttributes = [];
         foreach ($antecedents as $a) {

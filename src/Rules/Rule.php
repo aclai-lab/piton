@@ -1,9 +1,9 @@
 <?php
 
-namespace aclai-lab\piton\Rules;
+namespace aclai\piton\Rules;
 
-use aclai-lab\piton\Instances\Instances;
-use aclai-lab\piton\Attributes\Attribute;
+use aclai\piton\Instances\Instances;
+use aclai\piton\Attributes\Attribute;
 
 /**
  * A single rule that predicts a specified value.

@@ -1,10 +1,10 @@
 <?php
 
-namespace aclai-lab\piton\Tests;
+namespace aclai\piton\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-use aclai-lab\piton\ClassModel;
+use aclai\piton\ClassModel;
 
 class SaveClassModelTest extends TestCase
 {

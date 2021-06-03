@@ -1,13 +1,13 @@
 <?php
 
-namespace aclai-lab\piton\Console;
+namespace aclai\piton\Console;
 
 use Illuminate\Console\Command;
 
-use aclai-lab\piton\DBFit\DBFit;
-use aclai-lab\piton\Facades\Piton;
-use aclai-lab\piton\Learners\PRip;
-use aclai-lab\piton\ModelVersion;
+use aclai\piton\DBFit\DBFit;
+use aclai\piton\Facades\Piton;
+use aclai\piton\Learners\PRip;
+use aclai\piton\ModelVersion;
 
 class CreateModelsWithPRip extends Command
 {

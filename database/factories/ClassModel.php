@@ -1,6 +1,6 @@
 <?php
 
-use aclai-lab\piton\ClassModel;
+use aclai\piton\ClassModel;
 
 $factory->define(ClassModel::class, function (Faker\Generator $faker) {
 	return [

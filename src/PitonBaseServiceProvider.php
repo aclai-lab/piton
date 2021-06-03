@@ -1,6 +1,6 @@
 <?php
 
-namespace aclai-lab\piton;
+namespace aclai\piton;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -87,11 +87,11 @@ class PitonBaseServiceProvider extends ServiceProvider
     protected function registerFacades()
     {
         $this->app->singleton('Piton', function ($app) {
-            return new \aclai-lab\piton\Piton();
+            return new \aclai\piton\Piton();
         });
 
         $this->app->singleton('Utils', function ($app) {
-            return new \aclai-lab\piton\Utils();
+            return new \aclai\piton\Utils();
         });
     }
 }

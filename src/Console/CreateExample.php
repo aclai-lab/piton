@@ -1,11 +1,11 @@
 <?php
 
-namespace aclai-lab\piton\Console;
+namespace aclai\piton\Console;
 
 use Illuminate\Console\Command;
 
-use aclai-lab\piton\DBFit\DBFit;
-use aclai-lab\piton\ModelVersion;
+use aclai\piton\DBFit\DBFit;
+use aclai\piton\ModelVersion;
 
 class CreateExample extends Command
 {

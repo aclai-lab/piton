@@ -1,6 +1,6 @@
 <?php
 
-namespace aclai-lab\piton;
+namespace aclai\piton;
 
 /* Library of generic utils */
 class Utils
@@ -31,7 +31,7 @@ class Utils
         echo "<b>WARNING!</b> " . $msg . PHP_EOL;
     }
 
-    public function mysql_set($arr, $map_function = "aclai-lab\\piton\\Utils::mysql_quote_str")
+    public function mysql_set($arr, $map_function = "aclai\\piton\\Utils::mysql_quote_str")
     {
         return "(" . Utils::mysql_list($arr, $map_function) . ")";
     }
