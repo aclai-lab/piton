@@ -1,0 +1,36 @@
+{
+    "name": "aclai-lab/piton",
+    "description": "A set of classification learners for the Laravel framework.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alberto Paparella",
+            "email": "alberto.paparella@edu.unife.it"
+        }
+    ],
+    "require-dev": {
+        "orchestra/testbench": "^6.17"
+    },
+    "autoload": {
+        "psr-4": {
+            "aclai-lab\\piton\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "aclai-lab\\piton\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "aclai-lab\\piton\\PitonBaseServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "doctrine/dbal": "^3.0",
+        "laravel/legacy-factories": "^1.1",
+      "ext-json": "*"
+    }
+}
