@@ -24,7 +24,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "aclai-lab\\piton\\src\\PitonBaseServiceProvider"
+                "aclai-lab\\piton\\PitonBaseServiceProvider"
             ]
         }
     },
