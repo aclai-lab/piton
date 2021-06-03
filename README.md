@@ -5,24 +5,29 @@ A set of classification learners for the Laravel framework.
 
 Clone the repository on your PC.
 
-Add these lines to your `composer.json` file:
+Add this github project as a repository in composer.json
 
 ```json
-"repositories": {
-    "dev-package": {
-        "type": "path",
-        "url": "<the/package/url/on/your/pc>",
-        "options": {
-        	"symlink": true
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/aclai-lab/piton"
         }
-    }
+    ],    
 }
+```
+
+Add the package in require section:
+
+```
+"require": {
+	"aclai-lab/piton": "master"
+   }
 ```
 
 And in the terminal, run the following commands.
 
 ```
-composer require aclai-lab/piton
 composer update
 ```
 
