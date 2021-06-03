@@ -31,6 +31,6 @@
     "require": {
         "doctrine/dbal": "^3.0",
         "laravel/legacy-factories": "^1.1",
-      "ext-json": "*"
+        "ext-json": "*"
     }
 }
