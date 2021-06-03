@@ -11,7 +11,7 @@ Add this github project as a repository in composer.json
 "repositories": [
 	{
 		"type": "vcs",
-		"url": "https://github.com/aclai/piton"
+		"url": "https://github.com/aclai-lab/piton"
 	}
 ],    
 
