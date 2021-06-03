@@ -13,3 +13,4 @@ yarn-error.log
 /src/Learners/PythonLearners/__pycache__
 .idea
 .vscode
+composer.lock
