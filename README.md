@@ -8,13 +8,13 @@ Clone the repository on your PC.
 Add this github project as a repository in composer.json
 
 ```json
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/aclai-lab/piton"
-        }
-    ],    
-}
+"repositories": [
+	{
+		"type": "vcs",
+		"url": "https://github.com/aclai-lab/piton"
+	}
+],    
+
 ```
 
 Add the package in require section:
@@ -22,7 +22,7 @@ Add the package in require section:
 ```
 "require": {
 	"aclai-lab/piton": "master"
-   }
+}
 ```
 
 And in the terminal, run the following commands.
