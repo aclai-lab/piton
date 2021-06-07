@@ -3,9 +3,7 @@ A set of classification learners for the Laravel framework.
 
 # Install
 
-Clone the repository on your PC.
-
-Add this github project as a repository in composer.json
+Add this github project as a repository in composer.json:
 
 ```json
 "repositories": [
@@ -13,7 +11,7 @@ Add this github project as a repository in composer.json
 		"type": "vcs",
 		"url": "https://github.com/aclai-lab/piton"
 	}
-],    
+]
 
 ```
 
@@ -25,7 +23,7 @@ Add the package in require section:
 }
 ```
 
-And in the terminal, run the following commands.
+And in the terminal, run the following command:
 
 ```
 composer update
