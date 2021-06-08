@@ -23,15 +23,10 @@ class PitonBaseServiceProvider extends ServiceProvider
     public function register()
     {
         $this->commands([
+            Console\CreateExample::class,
+            Console\PredictByIdentifier::class,
             Console\UpdateModels::class,
             Console\UpdateModelsWithInterface::class,
-            Console\UpdateModelsFromProblem::class,
-            Console\PredictByIdentifier::class,
-            Console\CreateExample::class,
-            #Console\CreateModelsWithPRip::class,
-            #Console\CreateModelsWithSKLearnCART::class,
-            #Console\CreateModelsWithWittgensteinIREP::class,
-            #Console\CreateModelsWithWittgensteinRIPPERk::class,
         ]);
     }
 
@@ -54,27 +49,32 @@ class PitonBaseServiceProvider extends ServiceProvider
      */
     protected function registerPublishing()
     {
+        /* Empty general problem config file. */
         $this->publishes([
-            __DIR__.'/../config/piton.php' => config_path('piton.php'),
-        ], 'piton-config');
+            __DIR__.'/../config/problem.php' => config_path('problem.php'),
+        ], 'problem-config');
 
+        /* PRip learner config file. */
         $this->publishes([
             __DIR__.'/../config/prip.php' => config_path('prip.php'),
         ], 'prip-config');
 
+        /* SKLearnLearner config file for CART algorithm. */
         $this->publishes([
             __DIR__.'/../config/sklearn_cart.php' => config_path('sklearn_cart.php'),
         ], 'sklearn_cart-config');
 
+        /* WittgensteinLearner config file for IREP algorithm. */
         $this->publishes([
             __DIR__.'/../config/wittgenstein_irep.php' => config_path('wittgenstein_irep.php'),
         ], 'wittgenstein_irep-config');
 
+        /* WittgensteinLearner config file for RIPPERk algorithm. */
         $this->publishes([
             __DIR__.'/../config/wittgenstein_ripperk.php' => config_path('wittgenstein_ripperk.php'),
         ], 'wittgenstein_ripperk-config');
 
-        /* Example of configuration of piton.php */
+        /* Example of configuration of problem config file. */
         $this->publishes([
           __DIR__.'/../config/iris.php' => config_path('iris.php'),
         ], 'iris-config');

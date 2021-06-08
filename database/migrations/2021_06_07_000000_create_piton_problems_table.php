@@ -26,15 +26,15 @@ class CreatePitonProblemsTable extends Migration
         /* Name of the problem. */
         $table->string('name', 256);
         /* The database tables where the input columns are (array of table-terms, one for each table). */
-        $table->json('inputTables');
+        $table->json('inputTables')->nullable();
         /* Input columns (array of inputColumn-terms, one for each column). */
-        $table->json('inputColumns');
+        $table->json('inputColumns')->nullable();
         /* Columns that are to be treated as output (array of outputColumn-terms, one for each column). */
-        $table->json('outputColumns');
+        $table->json('outputColumns')->nullable();
         /* SQL WHERE clauses for the concerning inputTables (array of {array of strings, or single string}). */
-        $table->json('whereClauses');
+        $table->json('whereClauses')->nullable();
         /* SQL ORDER BY clauses (array of strings, or single string). */
-        $table->json('OrderByClauses');
+        $table->json('OrderByClauses')->nullable();
         /* SQL LIMIT term in the SELECT query (integer). */
         /* This is perhaps just for debug.
            TODO remove this parameter? note that right now we use the same value at every recursion level.

@@ -24,7 +24,7 @@ class CreatePitonModelVersionTable extends Migration
 				/* ID of the model_version and therefore of the hierarchy of problems. */
 				$table->increments('id');
 				/* ID of the associated problem. */
-        $table->integer('id_problem');
+        		$table->integer('id_problem');
 				/* ID of the author who created the model_version. */
 				/* TODO doesn't this have to be in model? What if an author modifies a model? */
 				$table->integer('id_author')->nullable()->default(null);

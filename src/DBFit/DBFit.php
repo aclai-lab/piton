@@ -2300,7 +2300,7 @@ class DBFit
         }
     }
 
-    function getIdentifierColumnName(): string
+    public function getIdentifierColumnName() : string
     {
         return $this->identifierColumnName;
     }
@@ -2683,4 +2683,26 @@ class DBFit
         }
         return $attributes;
     }
+
+  /** Functions to get information about the problem. */
+  public function getInputTables() : array
+  {
+    return $this->inputTables;
+  }
+  public function getOutputColumns() : array
+  {
+    return $this->outputColumns;
+  }
+  public function getWhereClauses() : array
+  {
+    return $this->whereClauses;
+  }
+  public function getOrderByClauses() : array
+  {
+    return $this->orderByClauses;
+  }
+  public function getLimit() : ?int
+  {
+    return $this->limit;
+  }
 }
