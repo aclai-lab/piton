@@ -25,6 +25,7 @@ class PitonBaseServiceProvider extends ServiceProvider
         $this->commands([
             Console\UpdateModels::class,
             Console\UpdateModelsWithInterface::class,
+            Console\UpdateModelsFromProblem::class,
             Console\PredictByIdentifier::class,
             Console\CreateExample::class,
             #Console\CreateModelsWithPRip::class,
