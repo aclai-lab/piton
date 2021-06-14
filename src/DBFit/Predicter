@@ -1,0 +1,336 @@
+<?php
+
+namespace aclai\piton\DBFit;
+
+/**
+ * This class groups the old DBFit Logic which concerns the prediction.
+ * 
+ * TODO explain better the purpose of this class and how it works.
+ */
+
+class Predicter
+{
+    /* Use the models for predicting the values of the output columns for a new instance,
+        identified by the identifier column */
+    function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null): array
+    {
+        if ($recursionPath == []) {
+            /* Predict by identifier is called in a second moment, thus DBFit is just been created. */
+            /* Set DBFit options */
+            $this->setTrainingMode(config('piton.trainingMode'));
+            $this->setCutOffValue(config('piton.cutOffValue'));
+            foreach (config('piton.defaultOptions') as $defaultOption) {
+              $this->setDefaultOption($defaultOption[0], $defaultOption[1]);
+            }
+            $this->setInputTables(config('piton.inputTables'));
+            $this->setWhereClauses(config('piton.whereClauses'));
+            $this->setOrderByClauses(config('piton.orderByClauses'));
+            $this->setIdentifierColumnName(config('piton.identifierColumnName'));
+            $this->setInputColumns(config('piton.inputColumns'));
+            $this->setOutputColumns(config('piton.outputColumns'));
+            $this->setGlobalNodeOrder(config('piton.globalNodeOrder'));
+        }
+
+
+        echo "DBFit->predictByIdentifier($idVal, " . Utils::toString($recursionPath) . ")" . PHP_EOL;
+
+        // var_dump("aoeu");
+        // // var_dump($this->inputColumns);
+        // foreach($this->inputColumns as $column)
+        //   var_dump($this->getColumnAttributes($column...));
+        //   var_dump($this->getColumnNickname($column));
+        //   $raw_val = $raw_row[$this->getColumnNickname($column)];
+        //   var_dump($raw_val);
+        // }
+
+        /* Check */
+        if ($this->identifierColumnName === NULL) {
+            Utils::die_error("In order to use ->predictByIdentifier(), an identifier column must be set. Please,
+                              use ->setIdentifierColumnName()");
+        }
+
+        $recursionLevel = count($recursionPath);
+
+        /* Recursion base case */
+        if ($recursionLevel == $this->getHierarchyDepth()) {
+            echo "Prediction-time recursion stops here due to reached bottom (recursionPath = "
+                . Utils::toString($recursionPath) . ")" . PHP_EOL;
+            return [];
+        }
+
+        $predictions = [];
+
+        /* Read the dataframes specific to this recursion path */
+        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes);
+
+        /* If no model was trained for the current node, stop the recursion */
+        if ($rawDataframe === NULL) {
+            echo "Prediction-time recursion stops here due to lack of a model (recursionPath = "
+                . Utils::toString($recursionPath) . ":" . PHP_EOL;
+            return [];
+        }
+        // else {
+        // TODO avoid reading outputAttributes here, find an alternative solution
+        // $outputAttributes = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath);
+        //   /* Check if the models needed were trained */
+        //   // TODO: note that atm, unless this module is misused, either all models should be there, or none of them should. Not true anymore due to cutoffs
+        //   $atLeastOneModel = false;
+        //   foreach ($outputAttributes as $i_prob => $outputAttribute) {
+        //     $model_name = $this->getModelName($recursionPath, $i_prob);
+        //     if ((isset($this->models[$model_name]))) {
+        //       $atLeastOneModel = true;
+        //     }
+        //   }
+        //   if (!$atLeastOneModel) {
+        //     echo "Prediction-time recursion stops here due to lack of models (recursionPath = " . toString($recursionPath) . ":" . PHP_EOL;
+
+        //     foreach ($outputAttributes as $i_prob => $outputAttribute) {
+        //       $model_name = $this->getModelName($recursionPath, $i_prob);
+        //       echo "$model_name" . PHP_EOL;
+        //     }
+        //     return [];
+        //   }
+        // }
+
+
+        /* Check: if no data available stop recursion */
+        if ($rawDataframe === NULL || !$numDataframes) {
+            echo "Prediction-time recursion stops here due to lack of data (recursionPath = "
+                . Utils::toString($recursionPath) . "). " . PHP_EOL;
+            if ($recursionLevel == 0) {
+                Utils::die_error("Couldn't compute output attribute (at root level prediction-time).");
+            }
+            return [];
+        }
+
+        /* For each attribute, predict subtree */
+        foreach ($this->generateDataframes($rawDataframe, null) as $i_prob => $dataframe) {
+            echo "Problem $i_prob/" . $numDataframes . PHP_EOL;
+            // echo "Data: " . $dataframe->toString(true) . PHP_EOL;
+
+            /* If no data available, skip training */
+            if (!$dataframe->numInstances()) {
+                Utils::die_error("No data instance found at prediction time. "
+                    . "Path: " . Utils::toString($recursionPath));
+                continue;
+            }
+
+            /* Check that a unique data instance is retrieved */
+            if ($dataframe->numInstances() !== 1) {
+                Utils::die_error("Found more than one instance at predict time. Is this wanted? ID:
+                                 {$this->identifierColumnName} = $idVal");
+            }
+
+            //$dataframe->save_CSV("datasets/" . $this->getModelName($recursionPath, NULL) . "-$idVal.csv");
+
+            /* Retrieve model */
+
+
+            #echo "Recursion level: " . $recursionLevel . PHP_EOL;
+            #print_r($recursionPath);
+            #echo "i_prob: " . $i_prob . PHP_EOL;
+
+            $model_name = $this->getModelName($recursionPath, $i_prob);
+            //$model = $this->getHierarchyModel($recursionPath, $i_prob);
+
+            if (Utils::startsWith($model_name, "_")) {
+              $model_name = mb_substr($model_name, 1);
+            }
+            #echo "Model name: " . $model_name . PHP_EOL; #debug
+            #echo "idModelVersion: " . $idModelVersion . PHP_EOL; #debug
+            $classModel = ClassModel::where('id_model_version', $idModelVersion)
+              //->where('class', 'like', '%\"name\":\"$model_name\"%')->first();
+              ->where('class', 'like', '%' . $model_name . '%')->first();
+            #echo $classModel ? "not null" . PHP_EOL : "null" . PHP_EOL; # debug
+            if ($classModel === null) {
+              continue;
+            }
+            $model = RuleBasedModel::createFromDB($classModel->id);
+            #print_r($model->getAttributes());
+
+            #dd($classModel);
+            #dd($model);
+            #dd($dataframe);
+
+            if ($model === NULL) {
+                continue;
+                // die_error("Model '$model_name' is not initialized");
+            }
+            if (!($model instanceof DiscriminativeModel)) {
+                Utils::die_error("Something's off. Model '$model_name' is not a DiscriminativeModel. "
+                    . Utils::get_var_dump($model));
+            }
+
+            // echo "Using model '$model_name' for prediction." . PHP_EOL;
+            // echo $model . PHP_EOL;
+
+            // var_dump($dataframe->getAttributes());
+            // var_dump($model->getAttributes());
+
+            /* Perform local prediction */
+            $predictedVals = $model->predict($dataframe, true)["predictions"];
+            $predictedVal = $predictedVals[$idVal];
+            $className = $dataframe->reprClassVal($predictedVal);
+            echo "Prediction: [$predictedVal] '$className' (using model '$model_name')" . PHP_EOL;
+
+            /* Recursive step: recurse and predict the subtree of this predicted value */
+            // TODO right now I'm not recurring when a "NO_" outcome happens. This is not supersafe, there must be a nice generalization.
+            if (!Utils::startsWith($className, "NO_")) {
+                $predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal],
+                    $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]), $idModelVersion)];
+                echo PHP_EOL;
+            }
+        }
+
+        /* At root level, finally prints the whole prediction tree */
+        if ($recursionLevel == 0) {
+            echo "Predictions: " . PHP_EOL;
+            foreach ($predictions as $i_prob => $pred) {
+                echo "[$i_prob]: " . Utils::toString($pred) . PHP_EOL;
+            }
+            echo PHP_EOL;
+        }
+
+        return $predictions;
+    }
+
+    /* TODO explain */
+    function getModelName(array $recursionPath, ?int $i_prob, $short = false): string
+    {
+        #echo "Recursion path in getModelName: " . PHP_EOL;
+        #print_r($recursionPath);
+        #if ($recursionPath === null) echo "null";
+
+        #$name_chunks = [];
+        /*foreach ($recursionPath as $recursionLevel => $node) {
+            #dd($recursionPath);
+            dd($this->getColumnAttributes($this->outputColumns[$recursionLevel],$node));
+            if (!$short) {
+                $name_chunks[] = str_replace(".", ">",
+                    $this->getColumnAttributes($this->outputColumns[$recursionLevel],
+                      array_slice($recursionPath,0, $recursionLevel))[$node[0]]->getName()) . "=" . $node[1];
+            } else {
+                $name_chunks[] = $node[0] . "=" . $node[1] . ",";
+            }
+        }*/
+        #$path_name = join("-", $name_chunks);
+        // var_dump($outAttrs);
+        // var_dump($recursionPath);
+        // var_dump(count($recursionPath));
+        // var_dump($outAttrs[count($recursionPath)]);
+        $recursionLevel = count($recursionPath);
+        if (!$short) {
+            if ($i_prob !== NULL) {
+                #echo '$this->outputColumns[$recursionLevel]' . PHP_EOL;
+                #print_r($this->outputColumns[$recursionLevel]);# here is the problem
+                #echo "getColumnAttributes: " . PHP_EOL;
+                #print_r($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath));
+                #echo "i_prob: " . $i_prob . PHP_EOL; # debug
+                #echo "rec lev: " . $recursionLevel . PHP_EOL; #debug
+                $currentLevelStr = str_replace(".", ".",
+                    $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName());
+                //$out = str_replace("/", ".", $path_name . "_" . $currentLevelStr);
+                $out = str_replace("/", ".", $currentLevelStr);
+            } else {
+                #$out = str_replace("/", ".", $path_name);
+                $out = "";
+            }
+        } else {
+            if ($i_prob !== NULL) {
+                #$out = $path_name . $i_prob;
+              $out = strval($i_prob);
+            } else {
+                #$out = $path_name;
+                $out = "";
+            }
+        }
+        #echo $out . PHP_EOL;
+        return $out;
+    }
+
+
+    /*
+     * Use the model for predicting the output attribute on a set of instances.
+     * With multiple models, this requires a complex hierarchy of predictions and
+     *  the computation of confusion matrices at different levels
+     */
+    // function predict(array $recursionPath = []) : array {
+    //   echo "DBFit->predict(" . $testData->toString(true) . ", " . toString($recursionPath) . ")" . PHP_EOL;
+
+    //   $recursionLevel = count($recursionPath);
+
+    //   /* Recursion base case */
+    //   if ($recursionLevel == $this->getHierarchyDepth()) {
+    //     echo "Prediction-time recursion stops here due to reached bottom (recursionPath = " . toString($recursionPath) . ":" . PHP_EOL;
+    //     return [];
+    //   }
+
+    //   &$this->outputColumns[$recursionLevel];
+    //   $this->getColumnAttributes($outputColumn, $recursionPath)
+
+    //   foreach ($this->generateDataframes($rawDataframe) as $i_prob => $dataframe) {
+    //     echo "Problem $i_prob/" . $numDataframes . PHP_EOL;
+    //     // $outputAttribute = $outputAttributes[$i_prob];
+    //     $outputAttribute = $dataframe->getClassAttribute();
+
+    //     /* If no data available, skip training */
+    //     if (!$dataframe->numInstances()) {
+    //       echo "Skipping node due to lack of data." . PHP_EOL;
+    //       if ($recursionLevel == 0) {
+    //         die_error("Training failed! No data instance found.");
+    //       }
+    //       continue;
+    //     }
+    //   }
+
+    //   $model = $this->models...[array_key_last($this->models)];
+    //   if (!($model instanceof DiscriminativeModel)) {
+    //     die_error("Model is not initialized");
+    //   }
+
+    //   die_error("TODO check if predict still works");
+    //   return $model->predict($inputData)["predictions"];
+    // }
+
+    /* DEBUG-ONLY - TODO remove */
+    function test_all_capabilities()
+    {
+        echo "DBFit->test_all_capabilities()" . PHP_EOL;
+
+        $start = microtime(TRUE);
+        $this->updateModel();
+        $end = microtime(TRUE);
+        echo "updateModel took " . ($end - $start) . " seconds to complete." . PHP_EOL;
+
+        echo "AVAILABLE MODELS:" . PHP_EOL;
+        $this->listAvailableModels();
+        // TODO
+        // $start = microtime(TRUE);
+        // $this->model->LoadFromDB($this->outputDB, str_replace(".", ":", $this->getOutputColumnAttributes()[0]))->getName();
+        // $end = microtime(TRUE);
+        // echo "LoadFromDB took " . ($end - $start) . " seconds to complete." . PHP_EOL;
+
+        if ($this->identifierColumnName !== NULL) {
+            $start = microtime(TRUE);
+            $this->predictByIdentifier(1);
+            $end = microtime(TRUE);
+            echo "predictByIdentifier took " . ($end - $start) . " seconds to complete." . PHP_EOL;
+        }
+    }
+
+    function listAvailableModels($model_tree = NULL, $indentation = 0)
+    {
+        if ($model_tree === NULL) {
+            $model_tree = $this->models["subtree"];
+        }
+        // var_dump(count($model_tree));
+        // echo "listAvailableModels(" . get_var_dump($model_tree) . ", $indentation)";
+        foreach ($model_tree as $i_prob => $node) {
+            // $model    = $node["model"];
+            $name = $node["name"];
+            $subtree = $node["subtree"];
+            echo str_repeat("  ", $indentation) . "[$i_prob] \"$name\"" . PHP_EOL;
+            $this->listAvailableModels($subtree, $indentation + 1);
+        }
+    }
+}
