@@ -1469,15 +1469,6 @@ class DBFit
 
         echo "DBFit->predictByIdentifier($idVal, " . Utils::toString($recursionPath) . ")" . PHP_EOL;
 
-        // var_dump("aoeu");
-        // // var_dump($this->inputColumns);
-        // foreach($this->inputColumns as $column)
-        //   var_dump($this->getColumnAttributes($column...));
-        //   var_dump($this->getColumnNickname($column));
-        //   $raw_val = $raw_row[$this->getColumnNickname($column)];
-        //   var_dump($raw_val);
-        // }
-
         /* Check */
         if ($this->identifierColumnName === NULL) {
             Utils::die_error("In order to use ->predictByIdentifier(), an identifier column must be set. Please,
@@ -1581,11 +1572,6 @@ class DBFit
               continue;
             }
             $model = RuleBasedModel::createFromDB($classModel->id);
-            #print_r($model->getAttributes());
-
-            #dd($classModel);
-            #dd($model);
-            #dd($dataframe);
 
             if ($model === NULL) {
                 continue;
@@ -1596,22 +1582,34 @@ class DBFit
                     . Utils::get_var_dump($model));
             }
 
-            // echo "Using model '$model_name' for prediction." . PHP_EOL;
-            // echo $model . PHP_EOL;
-
-            // var_dump($dataframe->getAttributes());
-            // var_dump($model->getAttributes());
-
             /* Perform local prediction */
-            $predictedVals = $model->predict($dataframe, true)["predictions"];
-            $predictedVal = $predictedVals[$idVal];
-            $className = $dataframe->reprClassVal($predictedVal);
+            $predictionOutput = $model->predict($dataframe, true);
+            $predictedVal     = $predictionOutput['predictions'][$idVal];
+            $storedRules      = $predictionOutput['storedRules'][$idVal];
+            $className        = $dataframe->reprClassVal($predictedVal);
             echo "Prediction: [$predictedVal] '$className' (using model '$model_name')" . PHP_EOL;
+
+            /**
+             * I want the antecedents to have a more similar format to the json one in the database.
+             * Remember: just the last array of antecedents, in fact, contains the activated rule.
+             * But for not normalized models, we want to keep track of the rules encountered before
+             * its activation which haven't been activated.
+             */
+            $rulesAntecedents = [];
+            foreach ($storedRules as $sr => $storedRule) {
+                /* I actually just need to store the antecedents. */
+                $ruleAntecedents = $storedRule->getAntecedents();
+                foreach ($ruleAntecedents as $ra => $ruleAntecedent) {
+                    $rulesAntecedents[$sr][$ra] =  $ruleAntecedent->serializeToArray();
+                }
+            }
 
             /* Recursive step: recurse and predict the subtree of this predicted value */
             // TODO right now I'm not recurring when a "NO_" outcome happens. This is not supersafe, there must be a nice generalization.
             if (!Utils::startsWith($className, "NO_")) {
-                $predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal],
+                /*$predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal],
+                    $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]), $idModelVersion)];*/
+                $predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal, $rulesAntecedents],
                     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]), $idModelVersion)];
                 echo PHP_EOL;
             }

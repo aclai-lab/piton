@@ -70,7 +70,7 @@ class RuleBasedModel extends DiscriminativeModel
      * @return array[]
      */
     function predict(Instances $testData, bool $useClassIndices = false, bool $returnPerRuleMeasures = false,
-                     ?array $rulesAffRilThresholds = [0.2, 0.7]): array
+                     ?array $rulesAffRilThresholds = [0.2, 0.7]) : array
     {
         if (!(is_array($this->rules)))
             Utils::die_error("Can't use uninitialized rule-based model.");
@@ -88,15 +88,30 @@ class RuleBasedModel extends DiscriminativeModel
             /* Predict */
             $classAttr = $allTestData->getClassAttribute();
             $predictions = [];
+
+            /**
+             * @var array
+             * 
+             * If the model is normalized, for each instance it stores the activated rule.
+             * If the model isn't normalized, it stores all the rules until one is activated.
+             * Therefore, the last rule is always the activated one.
+             * To obtain the real full rule for not normalized models, do the interjection with
+             * the negation of previous rules, or with the conjunction of their negated antecedents.
+            */
+            $storedRules = [];
+
             if ($rulesAffRilThresholds !== NULL) {
                 $rule_types = [];
             }
 
             foreach ($allTestData->iterateInsts() as $instance_id => $inst) {
                 $prediction = NULL;
+
+                /* The rule which covered the instance and assigned the class value. */
+                $storedRules[$instance_id] = [];
+
                 #echo "Instance: " . $allTestData->inst_toString($instance_id, false) . PHP_EOL; #debug
                 foreach ($this->rules as $r => $rule) {
-                    #echo $rule . PHP_EOL; #debug
                     if ($rule->covers($allTestData, $instance_id)) {
                         $idx = $rule->getConsequent();
                         if ($rulesAffRilThresholds !== NULL) {
@@ -109,17 +124,22 @@ class RuleBasedModel extends DiscriminativeModel
                             $rule_type = ($ril ? "R" : "NR") . ($aff ? "A" : "NA");
                         }
                         $prediction = ($useClassIndices ? $idx : $classAttr->reprVal($idx));
+
+                        $storedRules[$instance_id][] = $rule;
+
                         break;
                     }
                     else {
-                        #echo "NO" . PHP_EOL; #debug
+                        /**
+                         * If the model isn't normalized, i store all the rules until I met the one
+                         * which covers the instance.
+                         */
+                        if (!$this->getIsNormalized()) {
+                            $storedRules[$instance_id][] = $rule;
+                        }
                     }
                 }
-                #Utils::die_error("FINE"); #debug
-                $predictions[$instance_id] = $prediction;
-                /* I added $rule->covers($allTestData, $instance_id), is this correct?
-                    (Problem: it said $rule_type wasn't existing; this probably means $rulesAffRilThesholds were
-                     defined, but the rule didn't cover the instance */
+                $predictions[$instance_id]    = $prediction;
                 if ($rule->covers($allTestData, $instance_id) && $rulesAffRilThresholds !== NULL) {
                     $rule_types[$instance_id] = $rule_type;
                 }
@@ -146,6 +166,9 @@ class RuleBasedModel extends DiscriminativeModel
         }
 
         $output = ["predictions" => $predictions];
+
+        $output["storedRules"] = $storedRules;
+
         if ($returnPerRuleMeasures) {
             $output["rules_measures"] = $rules_measures;
         }
