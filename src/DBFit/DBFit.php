@@ -1435,6 +1435,33 @@ class DBFit
      * Use the models for predicting the values of the output columns for a new instance,
      * identified by the identifier column.
      * 
+     * Notice that, if the models used for the prediction are not normalized, the last
+     * group of antecedents belong to the activated rule, while the previous groups
+     * are an information about the rules that haven't been activated.
+     * Therefore, the full rule should be the activated rule interjected with the negation
+     * of the previous rules, or interjected with the union of their negated antecedents.
+     * 
+     * For example, considering the following not normalized model:
+     *  R0 = [A00, A01]
+     *  R1 = [A10, A11, A12, A13]
+     *  R2 = [A20, A21, A22]
+     *  R3 = [A30, A31, A32]
+     *  R4 = []
+     * If the third rule R2 is activated and the model isn't normalized, the function will retrieve
+     * information about the antecedents of R0, R1, R2 in the form of an array:
+     *  [
+     *      0 => [A00, A01],
+     *      1 => [A10, A11, A12, A13],
+     *      2 => [A20, A21, A22]
+     *  ]
+     * and only the antecedent of the last group [A20, A21, A22] are to be considered antecedents of R2.
+     * The full rule would be:
+     *  R2 AND NOT R0 AND NOT R1
+     * therefore:
+     *  (A20 AND A21 AND A22) AND NOT (A00 AND A01) AND NOT (A10 AND A11 AND A12 AND A13)
+     * or, eventually:
+     *  A20 AND A21 AND A22 AND (NOT A00 OR NOT A01) AND (NOT A10 OR NOT A11 OR NOT 12 OR NOT A13)     *  
+     * 
      * @param string $idVal The instance identifier value.
      * @param array $recursionPath The recursion path which brought us here.
      * @param int $idModelVersion The id of the model version on which we base the actual predict.
@@ -1549,9 +1576,10 @@ class DBFit
             }
 
             /* Perform local prediction */
-            $predictionOutput = $model->predict($dataframe, true);
+            $predictionOutput = $model->predict($dataframe, true, true);
             $predictedVal     = $predictionOutput['predictions'][$idVal];
             $storedRules      = $predictionOutput['storedRules'][$idVal];
+            $ruleMeasures     = $predictionOutput['rules_measures'][$idVal];
             $className        = $dataframe->reprClassVal($predictedVal);
             echo "Prediction: [$predictedVal] '$className' (using model '$model_name')" . PHP_EOL;
 
@@ -1575,8 +1603,16 @@ class DBFit
             if (!Utils::startsWith($className, "NO_")) {
                 /*$predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal],
                     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]), $idModelVersion)];*/
-                $predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal, $rulesAntecedents],
-                    $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]), $idModelVersion)];
+                $predictions[] = [
+                    [
+                        $dataframe->getClassAttribute()->getName(),
+                        $predictedVal,
+                        $rulesAntecedents,
+                        $ruleMeasures
+                    ],
+                    $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]),
+                    $idModelVersion)
+                ];
                 echo PHP_EOL;
             }
         }
