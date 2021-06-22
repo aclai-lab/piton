@@ -1469,7 +1469,7 @@ class DBFit
 
         echo "DBFit->predictByIdentifier($idVal, " . Utils::toString($recursionPath) . ")" . PHP_EOL;
 
-        /* Check */
+        /* Check. */
         if ($this->identifierColumnName === NULL) {
             Utils::die_error("In order to use ->predictByIdentifier(), an identifier column must be set. Please,
                               use ->setIdentifierColumnName()");
@@ -1477,7 +1477,7 @@ class DBFit
 
         $recursionLevel = count($recursionPath);
 
-        /* Recursion base case */
+        /* Recursion base case. */
         if ($recursionLevel == $this->getHierarchyDepth()) {
             echo "Prediction-time recursion stops here due to reached bottom (recursionPath = "
                 . Utils::toString($recursionPath) . ")" . PHP_EOL;
@@ -1486,40 +1486,17 @@ class DBFit
 
         $predictions = [];
 
-        /* Read the dataframes specific to this recursion path */
+        /* Read the dataframes specific to this recursion path. */
         $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes);
 
-        /* If no model was trained for the current node, stop the recursion */
+        /* If no model was trained for the current node, stop the recursion. */
         if ($rawDataframe === NULL) {
             echo "Prediction-time recursion stops here due to lack of a model (recursionPath = "
                 . Utils::toString($recursionPath) . ":" . PHP_EOL;
             return [];
         }
-        // else {
-        // TODO avoid reading outputAttributes here, find an alternative solution
-        // $outputAttributes = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath);
-        //   /* Check if the models needed were trained */
-        //   // TODO: note that atm, unless this module is misused, either all models should be there, or none of them should. Not true anymore due to cutoffs
-        //   $atLeastOneModel = false;
-        //   foreach ($outputAttributes as $i_prob => $outputAttribute) {
-        //     $model_name = $this->getModelName($recursionPath, $i_prob);
-        //     if ((isset($this->models[$model_name]))) {
-        //       $atLeastOneModel = true;
-        //     }
-        //   }
-        //   if (!$atLeastOneModel) {
-        //     echo "Prediction-time recursion stops here due to lack of models (recursionPath = " . toString($recursionPath) . ":" . PHP_EOL;
 
-        //     foreach ($outputAttributes as $i_prob => $outputAttribute) {
-        //       $model_name = $this->getModelName($recursionPath, $i_prob);
-        //       echo "$model_name" . PHP_EOL;
-        //     }
-        //     return [];
-        //   }
-        // }
-
-
-        /* Check: if no data available stop recursion */
+        /* Check: if no data available stop recursion. */
         if ($rawDataframe === NULL || !$numDataframes) {
             echo "Prediction-time recursion stops here due to lack of data (recursionPath = "
                 . Utils::toString($recursionPath) . "). " . PHP_EOL;
@@ -1532,7 +1509,6 @@ class DBFit
         /* For each attribute, predict subtree */
         foreach ($this->generateDataframes($rawDataframe, null) as $i_prob => $dataframe) {
             echo "Problem $i_prob/" . $numDataframes . PHP_EOL;
-            // echo "Data: " . $dataframe->toString(true) . PHP_EOL;
 
             /* If no data available, skip training */
             if (!$dataframe->numInstances()) {
@@ -1547,31 +1523,21 @@ class DBFit
                                  {$this->identifierColumnName} = $idVal");
             }
 
-            //$dataframe->save_CSV("datasets/" . $this->getModelName($recursionPath, NULL) . "-$idVal.csv");
-
             /* Retrieve model */
-
-
-            #echo "Recursion level: " . $recursionLevel . PHP_EOL;
-            #print_r($recursionPath);
-            #echo "i_prob: " . $i_prob . PHP_EOL;
-
             $model_name = $this->getModelName($recursionPath, $i_prob);
-            //$model = $this->getHierarchyModel($recursionPath, $i_prob);
-
             if (Utils::startsWith($model_name, "_")) {
               $model_name = mb_substr($model_name, 1);
             }
-            #echo "Model name: " . $model_name . PHP_EOL; #debug
-            #echo "idModelVersion: " . $idModelVersion . PHP_EOL; #debug
             $classModel = ClassModel::where('id_model_version', $idModelVersion)
-              //->where('class', 'like', '%\"name\":\"$model_name\"%')->first();
               ->where('class', 'like', '%' . $model_name . '%')->first();
-            #echo $classModel ? "not null" . PHP_EOL : "null" . PHP_EOL; # debug
             if ($classModel === null) {
               continue;
             }
             $model = RuleBasedModel::createFromDB($classModel->id);
+            /* If the model came from SKLearnLearner, i need to specify it's normalized. */
+            if (Utils::startsWith($modelVersion->learner, "SKLearnLearner")) {
+                $model->setIsNormalized(true);
+            }
 
             if ($model === NULL) {
                 continue;
