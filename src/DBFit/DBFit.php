@@ -49,6 +49,7 @@ use aclai\piton\Facades\Utils;
 use aclai\piton\Instances\Instances;
 use aclai\piton\Learners\Learner;
 use aclai\piton\ModelVersion;
+use aclai\piton\Problem;
 use aclai\piton\RuleStats\RuleStats;
 
 class DBFit
@@ -1430,25 +1431,39 @@ class DBFit
     //   $this->models = [DiscriminativeModel::loadFromFile($path)];
     // }
 
-    /* Use the models for predicting the values of the output columns for a new instance,
-        identified by the identifier column */
+    /**
+     * Use the models for predicting the values of the output columns for a new instance,
+     * identified by the identifier column.
+     * 
+     * @param string $idVal The instance identifier value.
+     * @param array $recursionPath The recursion path which brought us here.
+     * @param int $idModelVersion The id of the model version on which we base the actual predict.
+     * @return array The classes which contains the instance, and information about the rule which covered it. 
+     */
     function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null): array
     {
+        /* The prediction is based on the problem associated with the model version. */
+        $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
+        $idProblem = $modelVersion->id_problem;
+        $problem = Problem::where('id', $idProblem)->first();
+
         if ($recursionPath == []) {
             /* Predict by identifier is called in a second moment, thus DBFit is just been created. */
+            /* TODO use the data stored in the database for the problem. */
+            $problemName = $problem->name;
             /* Set DBFit options */
-            $this->setTrainingMode(config('piton.trainingMode'));
-            $this->setCutOffValue(config('piton.cutOffValue'));
-            foreach (config('piton.defaultOptions') as $defaultOption) {
+            $this->setTrainingMode(config($problemName . '.trainingMode'));
+            $this->setCutOffValue(config($problemName . '.cutOffValue'));
+            foreach (config($problemName . '.defaultOptions') as $defaultOption) {
               $this->setDefaultOption($defaultOption[0], $defaultOption[1]);
             }
-            $this->setInputTables(config('piton.inputTables'));
-            $this->setWhereClauses(config('piton.whereClauses'));
-            $this->setOrderByClauses(config('piton.orderByClauses'));
-            $this->setIdentifierColumnName(config('piton.identifierColumnName'));
-            $this->setInputColumns(config('piton.inputColumns'));
-            $this->setOutputColumns(config('piton.outputColumns'));
-            $this->setGlobalNodeOrder(config('piton.globalNodeOrder'));
+            $this->setInputTables(config($problemName . '.inputTables'));
+            $this->setWhereClauses(config($problemName . '.whereClauses'));
+            $this->setOrderByClauses(config($problemName . '.orderByClauses'));
+            $this->setIdentifierColumnName(config($problemName . '.identifierColumnName'));
+            $this->setInputColumns(config($problemName . '.inputColumns'));
+            $this->setOutputColumns(config($problemName . '.outputColumns'));
+            $this->setGlobalNodeOrder(config($problemName . '.globalNodeOrder'));
         }
 
 
