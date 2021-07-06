@@ -24,7 +24,7 @@ class ClassificationRule extends Rule
         parent::__construct($consequent);
     }
 
-    public function setConsequent($consequent): self
+    public function setConsequent($consequent)
     {
         if (!(is_int($consequent) && $consequent >= 0))
             Utils::die_error("Invalid consequent ($consequent) found when building ClassificationRule");

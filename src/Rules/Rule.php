@@ -30,7 +30,7 @@ abstract class Rule
         return $this->consequent;
     }
 
-    public function setConsequent($consequent): self
+    public function setConsequent($consequent)
     {
         $this->consequent = $consequent;
         return $this;
