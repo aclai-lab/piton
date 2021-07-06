@@ -76,9 +76,9 @@ Now that we have our package installed, we need to migrate the database to add t
 
 Up next, you need to publish the package's config file that includes some defaults for us. To publish that, run the following command.
 
-`php artisan vendor:publish --tag=piton-config`
+`php artisan vendor:publish --tag=problem-config`
 
-You will now find the config file located in `/config/piton.php`
+You will now find the config file located in `/config/problem.php`
 
 There, you can specify how to build the object of type Instances (basically, a table with metadata) on which you can create rule based models.
 
@@ -94,7 +94,7 @@ Then, you'll have to launch the following command:
 `php artisan vendor:publish --tag=iris-config`
 
 This will create a file called `iris.php` in your project `config` directory.
-Then, you have to rename it `piton.php`: this config file equals to a piton configuration based on the iris dataframe!
+This config file equals to a problem configuration based on the iris dataframe!
 
 Now, you can try to use one of our learners. For example, let's try to use PRip.
 First, we have to publish its configuration file via:
