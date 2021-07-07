@@ -1628,19 +1628,20 @@ class DBFit
                 //     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]),
                 //     $idModelVersion)
                 // ];
-                $predictions[]['class'] = DBFit::cleanClassName($dataframe->getClassAttribute()->getName());
+                $prediction['class'] = DBFit::cleanClassName($dataframe->getClassAttribute()->getName());
                 /**
                  * Only the last sub-array contains the activated rules, while the previous rules
                  * are the rules which haven't been activated.
                  * The full rule would be the activated rule plus the conjunction of the negated precious rules.
                  */                
-                $predictions[]['rules'] = $rulesAntecedents;
-                $predictions[]['rule_stats'] = $ruleMeasures;
-                $predictions[]['subclasses'] = $this->predictByIdentifier(
+                $prediction['rules'] = $rulesAntecedents;
+                $prediction['rule_stats'] = $ruleMeasures;
+                $prediction['subclasses'] = $this->predictByIdentifier(
                     $idVal,
                     array_merge($recursionPath, [[$i_prob, $className]]),
                     $idModelVersion
                 );
+                $predictions[] = $prediction;
             }
         }
 
