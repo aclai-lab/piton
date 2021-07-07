@@ -285,12 +285,14 @@ class DBFit
      * so there are k different problems, and this function computes k sets of instances, with same input
      * attributes/values and different output ones.
      */
-    private function readData($idVal = NULL, array $recursionPath = [], ?int &$numDataframes = null): ?array
+    private function readData($idVal = NULL, array $recursionPath = [], ?int &$numDataframes = null, bool $silentSQL = false): ?array
     {
 
         $recursionLevel = count($recursionPath);
-        echo "DBFit->readData(ID: " . Utils::toString($idVal) . ", LEVEL $recursionLevel (path "
-            . Utils::toString($recursionPath) . "))" . PHP_EOL;
+        if (!$silentSQL) {
+            echo "DBFit->readData(ID: " . Utils::toString($idVal) . ", LEVEL $recursionLevel (path "
+                . Utils::toString($recursionPath) . "))" . PHP_EOL;
+        }
 
         /* Checks */
         if (!count($this->inputColumns)) {
@@ -427,7 +429,7 @@ class DBFit
 
             /* Finally obtain data */
             // $silentSQL = (count($recursionPath) && $recursionPath[count($recursionPath)-1][0] != 0);
-            $silentSQL = false;
+            // $silentSQL = false;
             // $silentExcelOutput = false;
 
             if (!$silentSQL) {
@@ -1465,9 +1467,10 @@ class DBFit
      * @param string $idVal The instance identifier value.
      * @param array $recursionPath The recursion path which brought us here.
      * @param int $idModelVersion The id of the model version on which we base the actual predict.
+     * @param bool $log If true, print a log of the execution. Useful for debugging.
      * @return array The classes which contains the instance, and information about the rule which covered it. 
      */
-    function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null): array
+    function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false): array
     {
         /* The prediction is based on the problem associated with the model version. */
         $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
@@ -1493,8 +1496,9 @@ class DBFit
             $this->setGlobalNodeOrder(config($problemName . '.globalNodeOrder'));
         }
 
-
-        echo "DBFit->predictByIdentifier($idVal, " . Utils::toString($recursionPath) . ")" . PHP_EOL;
+        if ($log == true) {
+            echo "DBFit->predictByIdentifier($idVal, " . Utils::toString($recursionPath) . ")" . PHP_EOL;
+        }
 
         /* Check. */
         if ($this->identifierColumnName === NULL) {
@@ -1506,46 +1510,56 @@ class DBFit
 
         /* Recursion base case. */
         if ($recursionLevel == $this->getHierarchyDepth()) {
-            echo "Prediction-time recursion stops here due to reached bottom (recursionPath = "
-                . Utils::toString($recursionPath) . ")" . PHP_EOL;
+            if ($log == true) {
+                echo "Prediction-time recursion stops here due to reached bottom (recursionPath = "
+                    . Utils::toString($recursionPath) . ")" . PHP_EOL;
+            }
             return [];
         }
 
         $predictions = [];
 
         /* Read the dataframes specific to this recursion path. */
-        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes);
+        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true);
 
         /* If no model was trained for the current node, stop the recursion. */
         if ($rawDataframe === NULL) {
-            echo "Prediction-time recursion stops here due to lack of a model (recursionPath = "
-                . Utils::toString($recursionPath) . ":" . PHP_EOL;
+            if ($log == true) {
+                echo "Prediction-time recursion stops here due to lack of a model (recursionPath = "
+                    . Utils::toString($recursionPath) . ":" . PHP_EOL;
+            }
             return [];
         }
 
         /* Check: if no data available stop recursion. */
         if ($rawDataframe === NULL || !$numDataframes) {
-            echo "Prediction-time recursion stops here due to lack of data (recursionPath = "
-                . Utils::toString($recursionPath) . "). " . PHP_EOL;
-            if ($recursionLevel == 0) {
-                Utils::die_error("Couldn't compute output attribute (at root level prediction-time).");
+            if ($log == true) {
+                echo "Prediction-time recursion stops here due to lack of data (recursionPath = "
+                    . Utils::toString($recursionPath) . "). " . PHP_EOL;
+                if ($recursionLevel == 0) {
+                    Utils::die_error("Couldn't compute output attribute (at root level prediction-time).");
+                }
             }
             return [];
         }
 
         /* For each attribute, predict subtree */
         foreach ($this->generateDataframes($rawDataframe, null) as $i_prob => $dataframe) {
-            echo "Problem $i_prob/" . $numDataframes . PHP_EOL;
+            if ($log == true) {
+                echo "Problem $i_prob/" . $numDataframes . PHP_EOL;
+            }
 
             /* If no data available, skip training */
             if (!$dataframe->numInstances()) {
-                Utils::die_error("No data instance found at prediction time. "
-                    . "Path: " . Utils::toString($recursionPath));
+                if ($log == true) {
+                    Utils::die_error("No data instance found at prediction time. "
+                        . "Path: " . Utils::toString($recursionPath));
+                }
                 continue;
             }
 
             /* Check that a unique data instance is retrieved */
-            if ($dataframe->numInstances() !== 1) {
+            if ($dataframe->numInstances() !== 1 && $log == true) {
                 Utils::die_error("Found more than one instance at predict time. Is this wanted? ID:
                                  {$this->identifierColumnName} = $idVal");
             }
@@ -1568,9 +1582,8 @@ class DBFit
 
             if ($model === NULL) {
                 continue;
-                // die_error("Model '$model_name' is not initialized");
             }
-            if (!($model instanceof DiscriminativeModel)) {
+            if (!($model instanceof DiscriminativeModel) && $log == true) {
                 Utils::die_error("Something's off. Model '$model_name' is not a DiscriminativeModel. "
                     . Utils::get_var_dump($model));
             }
@@ -1581,7 +1594,9 @@ class DBFit
             $storedRules      = $predictionOutput['storedRules'][$idVal];
             $ruleMeasures     = $predictionOutput['rules_measures'][$idVal];
             $className        = $dataframe->reprClassVal($predictedVal);
-            echo "Prediction: [$predictedVal] '$className' (using model '$model_name')" . PHP_EOL;
+            if ($log) {
+                echo "Prediction: [$predictedVal] '$className' (using model '$model_name')" . PHP_EOL;
+            }
 
             /**
              * I want the antecedents to have a more similar format to the json one in the database.
@@ -1618,7 +1633,7 @@ class DBFit
         }
 
         /* At root level, finally prints the whole prediction tree */
-        if ($recursionLevel == 0) {
+        if ($recursionLevel == 0 && $log == true) {
             echo "Predictions: " . PHP_EOL;
             foreach ($predictions as $i_prob => $pred) {
                 echo "[$i_prob]: " . Utils::toString($pred) . PHP_EOL;
