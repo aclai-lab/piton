@@ -1618,17 +1618,29 @@ class DBFit
             if (!Utils::startsWith($className, "NO_")) {
                 /*$predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal],
                     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]), $idModelVersion)];*/
-                $predictions[] = [
-                    [
-                        $dataframe->getClassAttribute()->getName(),
-                        $predictedVal,
-                        $rulesAntecedents,
-                        $ruleMeasures
-                    ],
-                    $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]),
-                    $idModelVersion)
-                ];
-                echo PHP_EOL;
+                // $predictions[] = [
+                //     [
+                //         $dataframe->getClassAttribute()->getName(),
+                //         $predictedVal,
+                //         $rulesAntecedents,
+                //         $ruleMeasures
+                //     ],
+                //     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]),
+                //     $idModelVersion)
+                // ];
+                $predictions[]['class'] = DBFit::cleanClassName($dataframe->getClassAttribute()->getName());
+                /**
+                 * Only the last sub-array contains the activated rules, while the previous rules
+                 * are the rules which haven't been activated.
+                 * The full rule would be the activated rule plus the conjunction of the negated precious rules.
+                 */                
+                $predictions[]['rules'] = $rulesAntecedents;
+                $predictions[]['rule_stats'] = $ruleMeasures;
+                $predictions[]['subclasses'] = $this->predictByIdentifier(
+                    $idVal,
+                    array_merge($recursionPath, [[$i_prob, $className]]),
+                    $idModelVersion
+                );
             }
         }
 
@@ -1642,6 +1654,16 @@ class DBFit
         }
 
         return $predictions;
+    }
+
+    /**
+     * Usually, the retrieves className is in the form ClassAttr_ClassVal,
+     * but we usually want only the class value.
+     */
+    static protected function cleanClassName(string $className) : string
+    {
+        preg_match("/(.*)_(.*)/", $className, $matches);
+        return $matches[2];
     }
 
 
