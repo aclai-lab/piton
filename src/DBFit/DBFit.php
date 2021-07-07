@@ -1592,7 +1592,13 @@ class DBFit
             $predictionOutput = $model->predict($dataframe, true, true);
             $predictedVal     = $predictionOutput['predictions'][$idVal];
             $storedRules      = $predictionOutput['storedRules'][$idVal];
-            $ruleMeasures     = $predictionOutput['rules_measures'][$idVal];
+            if ($predictionOutput['rules_measures'][$idVal] != "") {
+                $ruleMeasures     = $predictionOutput['rules_measures'][$idVal];
+            } else {
+                if ($log) {
+                    echo "No measures found for activated rule when predicting if $idVal" . PHP_EOL;
+                }
+            }
             $className        = $dataframe->reprClassVal($predictedVal);
             if ($log) {
                 echo "Prediction: [$predictedVal] '$className' (using model '$model_name')" . PHP_EOL;
