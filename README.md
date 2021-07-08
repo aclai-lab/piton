@@ -110,3 +110,14 @@ This will create as many models as your class attributes (remember that categori
 We can now try to predict on these results launching: `php artisan piton:predict_by_identifier` and specifying an identifier.
 
 Suggestion: with the iris dataframe, we sugget using SKLearnLearner CART for accurate predictions. To do so, first publish the config file: `php artisan --tag=sklearn_cart.php` (remember, there's a config file for each "algorithm", only "PRip" has just one config file) and then run `php artisan piton:update_models <author_id> SKLearnLearner CART`.
+
+# Dependencies
+
+If you want to use the SKLearnLearner and the WittgensteinLearner learners, you also have to make sure that the follow dependencies are on your machine:
+
+- numpy=1.19.2
+- pandas=1.2.3
+- sqlalchemy=1.3.23
+- pymysql=1.0.2
+- scikit-learn=0.24.1
+- wittgenstein==0.2.3
