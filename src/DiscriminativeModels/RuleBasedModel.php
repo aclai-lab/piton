@@ -69,8 +69,7 @@ class RuleBasedModel extends DiscriminativeModel
      * @param array|float[]|null $rulesAffRilThresholds
      * @return array[]
      */
-    function predict(Instances $testData, bool $useClassIndices = false, bool $returnPerRuleMeasures = false,
-                     ?array $rulesAffRilThresholds = [0.2, 0.7]) : array
+    function predict(Instances $testData, bool $useClassIndices = false, bool $returnPerRuleMeasures = false, bool $returnRuleMeasures = false, ?array $rulesAffRilThresholds = [0.2, 0.7]) : array
     {
         if (!(is_array($this->rules)))
             Utils::die_error("Can't use uninitialized rule-based model.");
@@ -143,6 +142,9 @@ class RuleBasedModel extends DiscriminativeModel
                 if ($rule->covers($allTestData, $instance_id) && $rulesAffRilThresholds !== NULL) {
                     $rule_types[$instance_id] = $rule_type;
                 }
+                if ($returnRuleMeasures) {
+                    $rules_measures[$instance_id] = [];
+                }
             }
 
             if ($returnPerRuleMeasures) {
@@ -169,7 +171,7 @@ class RuleBasedModel extends DiscriminativeModel
 
         $output["storedRules"] = $storedRules;
 
-        if ($returnPerRuleMeasures) {
+        if ($returnRuleMeasures) {
             $output["rules_measures"] = $rules_measures;
         }
         if ($rulesAffRilThresholds !== NULL) {

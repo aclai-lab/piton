@@ -1589,7 +1589,7 @@ class DBFit
             }
 
             /* Perform local prediction */
-            $predictionOutput = $model->predict($dataframe, true, true);
+            $predictionOutput = $model->predict($dataframe, true, false, true);
             $predictedVal     = $predictionOutput['predictions'][$idVal];
             $storedRules      = $predictionOutput['storedRules'][$idVal];
             if ($predictionOutput['rules_measures'][$idVal] != "") {
