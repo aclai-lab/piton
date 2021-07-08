@@ -18,11 +18,15 @@ abstract class Rule
     /** The vector of antecedents of this rule */
     protected $antecedents;
 
+    /** The measures for the rules. Can be empty if not computed. */
+    protected $ruleMeasures;
+
     /** Constructor */
     function __construct(int $consequent = -1, array $antecedents = [])
     {
         $this->consequent = $consequent;
         $this->antecedents = $antecedents;
+        $this->ruleMeasures = [];
     }
 
     public function getConsequent()
@@ -101,6 +105,16 @@ abstract class Rule
     function __toString(): string
     {
         return $this->toString();
+    }
+
+    public function setRuleMeasures(array $ruleMeasures)
+    {
+        $this->ruleMeasures = $ruleMeasures;
+    }
+
+    public function getRuleMeasures() : array
+    {
+        return $this->ruleMeasures;
     }
 
     abstract function toString(Attribute $classAttr = NULL): string;

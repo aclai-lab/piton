@@ -143,7 +143,7 @@ class RuleBasedModel extends DiscriminativeModel
                     $rule_types[$instance_id] = $rule_type;
                 }
                 if ($returnRuleMeasures) {
-                    $rules_measures[$instance_id] = [];
+                    $rules_measures[$instance_id] = $rule->getRuleMeasures();
                 }
             }
 
@@ -999,6 +999,20 @@ table.blueTable tfoot .links a{
         $out_map = array_flip($class['domain']);
         $consequent = intval($out_map[$ruleArray['consequent']]);
         $rule = new ClassificationRule($consequent);
+
+        /* Measures storage. */
+        $ruleMeasures["covered"] = $ruleArray['covered'];
+        $ruleMeasures["support"] = $ruleArray['support'];
+        $ruleMeasures["confidence"] = $ruleArray['confidence'];
+        $ruleMeasures["lift"] = $ruleArray['lift'];
+        $ruleMeasures["conviction"] = $ruleArray['conviction'];
+        $ruleMeasures["globalCovered"] = $ruleArray['globalCovered'];
+        $ruleMeasures["globalSupport"] = $ruleArray['globalSupport'];
+        $ruleMeasures["globalConfidence"] = $ruleArray['globalConfidence'];
+        $ruleMeasures["globalLift"] = $ruleArray['globalLift'];
+        $ruleMeasures["globalConviction"] = $ruleArray['globalConviction'];
+        $rule->setRuleMeasures($ruleMeasures);
+
         $rule->setAntecedents($antecedents);
         $rules[] = $rule;
       }
