@@ -212,7 +212,7 @@ class RuleBasedModel extends DiscriminativeModel
             $ground_truths[$instance_id] = $testData->inst_classValue($instance_id);
         }
 
-        $p = $this->predict($testData, true, $testRuleByRule, $rulesAffRilThesholds);
+        $p = $this->predict($testData, true, $testRuleByRule, false, $rulesAffRilThesholds);
         $predictions = $p["predictions"];
         if ($testRuleByRule) {
             $rules_measures = $p["rules_measures"];
