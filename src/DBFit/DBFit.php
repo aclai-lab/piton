@@ -285,9 +285,11 @@ class DBFit
      * so there are k different problems, and this function computes k sets of instances, with same input
      * attributes/values and different output ones.
      */
-    private function readData($idVal = NULL, array $recursionPath = [], ?int &$numDataframes = null, bool $silentSQL = false): ?array
+    private function readData($idVal = NULL, array $recursionPath = [], ?int &$numDataframes = null, bool $silentSQL = false, bool $timing = false): ?array
     {
-
+        if ($timing) echo "Into readData\n";
+        if ($timing) $tic = microtime(TRUE);
+        if ($timing) $bigStart = $tic;
         $recursionLevel = count($recursionPath);
         if (!$silentSQL) {
             echo "DBFit->readData(ID: " . Utils::toString($idVal) . ", LEVEL $recursionLevel (path "
@@ -304,13 +306,17 @@ class DBFit
         if (!count($this->inputTables)) {
             Utils::die_error("Must specify the concerning input tables, through ->setInputTables() or ->addInputTable().");
         }
-
+        
         $outputColumnName = $this->getOutputColumnNames()[$recursionLevel];
+        if($timing) $tac = microtime(TRUE);
+        if($timing) echo "after getOutputColumnNames: " .  abs($tic - $tac) . "seconds.\n";
 
 
         /* Select redundant columns by examining the SQL constraints, to be ignored when creating the dataframe */
         $columnsToIgnore = [];
         $constraints = $this->getSQLConstraints($idVal, $recursionPath);
+        if($timing) $tic = microtime(TRUE);
+        if($timing) echo "after getSQLConstraints: " .  abs($tic - $tac) . "seconds.\n";
         foreach ($constraints as $constraint) {
             /* If any WHERE/JOIN-ON constraint forces the equality between two columns,
               drop one of the resulting attributes. */
@@ -352,9 +358,13 @@ class DBFit
         /* Recompute and obtain output attributes in order to profit from attributes that are more specific to the current recursionPath. */
         $outputColumn = &$this->outputColumns[$recursionLevel];
         //if ($idVal === NULL) { #debug
-            $this->assignColumnAttributes($outputColumn, $recursionPath, true);
+            $this->assignColumnAttributes($outputColumn, $recursionPath, true, true);
         //} #debug
+        if($timing) $tac = microtime(TRUE);
+        if($timing) echo "after assignColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
         $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
+        if($timing) $tic = microtime(TRUE);
+        if($timing) echo "after getColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
 
         $rawDataframe = NULL;
         $numDataframes = 0;
@@ -377,9 +387,12 @@ class DBFit
             /* Recompute and obtain input attributes in order to profit from attributes that are more specific to the current recursionPath. */
             //if ($idVal === NULL) { #debug
                 foreach ($this->inputColumns as &$column) {
-                    $this->assignColumnAttributes($column, $recursionPath);
+                    $this->assignColumnAttributes($column, $recursionPath, false, true);
                 }
             //} #debug
+
+            if($timing) $tac = microtime(TRUE);
+            if($timing) echo "after assignColumnAttributes cycle: " .  abs($tic - $tac) . "seconds.\n";
 
             $inputAttributes = [];
             foreach ($this->inputColumns as &$column) {
@@ -390,6 +403,8 @@ class DBFit
                 }
                 $inputAttributes[] = $attribute;
             }
+            if($timing) $tic = microtime(TRUE);
+            if($timing) echo "after getColumnName/getColumnAttributes cycle: " .  abs($tic - $tac) . "seconds.\n";
 
             $attributes = array_merge([$outputAttributes], $inputAttributes);
             $columns = array_merge([$outputColumn], $this->inputColumns);
@@ -437,7 +452,11 @@ class DBFit
             }
             $raw_data = $this->SQLSelectColumns($this->inputColumns, $idVal, $recursionPath, $outputColumn,
                 $silentSQL);
+            if($timing) $tac = microtime(TRUE);
+            if($timing) echo "after SQLSelectColumns cycle: " .  abs($tic - $tac) . "seconds.\n";
             $data = $this->readRawData($raw_data, $attributes, $columns);
+            if($timing) $tic = microtime(TRUE);
+            if($timing) echo "after readRawData: " .  abs($tic - $tac) . "seconds.\n";
             /* Deflate attribute and data arrays (breaking the symmetry with columns) */
 
             $final_data = [];
@@ -478,6 +497,9 @@ class DBFit
             $rawDataframe = [$final_attributes, $final_data, $outputAttributes];
             $numDataframes = count($outputAttributes);
         }
+
+        if($timing) $end = microtime(TRUE);
+        if($timing) echo "readData took: " .  abs($bigStart - $end) . "seconds.\n\n";
 
         return $rawDataframe;
     }
@@ -1001,10 +1023,14 @@ class DBFit
     }
 
     /* Create and assign the corresponding attribute(s) to a given column */
-    function assignColumnAttributes(array &$column, array $recursionPath = [], bool $isOutputAttribute = false)
+    function assignColumnAttributes(array &$column, array $recursionPath = [], bool $isOutputAttribute = false, bool $timing = false)
     {
         /* Attribute base-name */
         $attrName = $this->getColumnAttrName($column);
+
+        /* Start timing from here */
+        if($timing) $tic = microtime(TRUE);
+        if($timing) echo "\nInside assignColumnAttributes:.\n";
 
         // var_dump($column);
         switch (true) {
@@ -1043,6 +1069,8 @@ class DBFit
                 } else {
                     $attributes = $this->forceCategoricalBinary($depth, $classes, $attrName);
                 }
+                if($timing) $tac = microtime(TRUE);
+                if($timing) echo "case ForceSet took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
             /* Enum column */
             case $this->getColumnAttrType($column) == "enum":
@@ -1050,6 +1078,8 @@ class DBFit
                 $domain_arr = NULL;
                 eval("\$domain_arr = " . $domain_arr_str . ";");
                 $attributes = [new DiscreteAttribute($attrName, "enum", $domain_arr)];
+                if($timing) $tac = microtime(TRUE);
+                if($timing) echo "case enum took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
             /* Forcing a categorical attribute */
             /**
@@ -1093,6 +1123,8 @@ class DBFit
                 } else {
                     $attributes = [new DiscreteAttribute($attrName, "enum", $classes)];
                 }
+                if($timing) $tac = microtime(TRUE);
+                if($timing) echo "case forceCategorical took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
 
             /* Find unique values */
@@ -1120,10 +1152,14 @@ class DBFit
             /* Numeric column */
             case in_array($this->getColumnAttrType($column), ["int", "float", "double"]):
                 $attributes = [new ContinuousAttribute($attrName, $this->getColumnAttrType($column))];
+                if($timing) $tac = microtime(TRUE);
+                if($timing) echo "case in_array [int, float, double] took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
             /* Boolean column */
             case in_array($this->getColumnAttrType($column), ["bool", "boolean"]):
                 $attributes = [new DiscreteAttribute($attrName, "bool", ["0", "1"])];
+                if($timing) $tac = microtime(TRUE);
+                if($timing) echo "case in_array [bool, boolean] took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
             /* Text column */
             case $this->getColumnAttrType($column) == "text":
@@ -1217,9 +1253,13 @@ class DBFit
                             . Utils::get_var_dump($this->getColumnTreatmentType($column)));
                         break;
                 }
+                if($timing) $tac = microtime(TRUE);
+                if($timing) echo "case text took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
             default:
                 Utils::die_error("Unknown column type: " . $this->getColumnMySQLType($column));
+                if($timing) $tac = microtime(TRUE);
+                if($timing) echo "case default took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
         }
 
@@ -1470,8 +1510,11 @@ class DBFit
      * @param bool $log If true, print a log of the execution. Useful for debugging.
      * @return array The classes which contains the instance, and information about the rule which covered it. 
      */
-    function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false): array
+    function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false, bool $timing = false) : array
     {
+        if ($timing) echo "Into predictByIdentifier\n";
+        if ($timing) $tic = microtime(TRUE);
+        if ($timing) $bigStart = $tic;
         /* The prediction is based on the problem associated with the model version. */
         $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
         $idProblem = $modelVersion->id_problem;
@@ -1520,7 +1563,9 @@ class DBFit
         $predictions = [];
 
         /* Read the dataframes specific to this recursion path. */
-        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true);
+        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true, true);
+        if($timing) $tac = microtime(TRUE);
+        if($timing) echo "after readData: " .  abs($tic - $tac) . "seconds.\n";
 
         /* If no model was trained for the current node, stop the recursion. */
         if ($rawDataframe === NULL) {
@@ -1575,6 +1620,8 @@ class DBFit
               continue;
             }
             $model = RuleBasedModel::createFromDB($classModel->id);
+            if($timing) $tic = microtime(TRUE);
+            if($timing) echo "after createFromDB: " .  abs($tic - $tac) . "seconds.\n";
             /* If the model came from SKLearnLearner, i need to specify it's normalized. */
             if (Utils::startsWith($modelVersion->learner, "SKLearnLearner")) {
                 $model->setIsNormalized(true);
@@ -1590,6 +1637,8 @@ class DBFit
 
             /* Perform local prediction */
             $predictionOutput = $model->predict($dataframe, true, false, true);
+            if($timing) $tac = microtime(TRUE);
+            if($timing) echo "after predict: " .  abs($tic - $tac) . "seconds.\n";
             $predictedVal     = $predictionOutput['predictions'][$idVal];
             $storedRules      = $predictionOutput['storedRules'][$idVal];
             if ($predictionOutput['rules_measures'][$idVal] != "") {
@@ -1645,7 +1694,9 @@ class DBFit
                 $prediction['subclasses'] = $this->predictByIdentifier(
                     $idVal,
                     array_merge($recursionPath, [[$i_prob, $className]]),
-                    $idModelVersion
+                    $idModelVersion,
+                    $log,
+                    $timing
                 );
                 $predictions[] = $prediction;
             }
@@ -1659,6 +1710,9 @@ class DBFit
             }
             echo PHP_EOL;
         }
+
+        if ($timing) $end = microtime(TRUE);
+        if ($timing) echo "predictByIdentifier took " . ($end - $bigStart) . " seconds to complete." . PHP_EOL;
 
         return $predictions;
     }
