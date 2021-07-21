@@ -1668,9 +1668,16 @@ class DBFit
                 }
             }
 
+            /* String associated with predicted value */
+            $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
+
             /* Recursive step: recurse and predict the subtree of this predicted value */
             // TODO right now I'm not recurring when a "NO_" outcome happens. This is not supersafe, there must be a nice generalization.
-            if (!Utils::startsWith($className, "NO_")) {
+            
+            //Update: not if class name, but if value starts with no_
+            if (!Utils::startsWith($predictedStringVal, "NO_")) {
+            
+            //if (!Utils::startsWith($className, "NO_")) {
                 /*$predictions[] = [[$dataframe->getClassAttribute()->getName(), $predictedVal],
                     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]), $idModelVersion)];*/
                 // $predictions[] = [
@@ -1684,6 +1691,7 @@ class DBFit
                 //     $idModelVersion)
                 // ];
                 $prediction['class'] = DBFit::cleanClassName($dataframe->getClassAttribute()->getName());
+                $prediction['predictedValue'] = $predictedStringVal;
                 /**
                  * Only the last sub-array contains the activated rules, while the previous rules
                  * are the rules which haven't been activated.
