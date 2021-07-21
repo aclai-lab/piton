@@ -1814,9 +1814,9 @@ class DBFit
             echo PHP_EOL;
         }
 
-        //if ($timing)
+        if ($timing)
             $end = microtime(TRUE);
-        //if ($timing)
+        if ($timing)
             echo "predictByIdentifier took " . ($end - $start) . " seconds to complete." . PHP_EOL;
 
         return $predictions;
