@@ -366,9 +366,9 @@ class DBFit
         // if($timing) echo "after getColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
         
         /* New: only one read from database */
-        $raw_data = $this->SQLSelectColumns($this->inputColumns, NULL, $recursionPath, $outputColumn,
+        /* We want to call this with just with $idVal  */
+        $raw_data = $this->SQLSelectColumns($this->inputColumns, null, $recursionPath, $outputColumn,
                 $silentSQL);
-
         /* Obtaining attributes and assigning columns to attributes */
         $this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
         $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
@@ -1055,7 +1055,7 @@ class DBFit
                 else {
                   /* I need to extrapolate the column (array indexes don't come in handy) */
                   $domain = array_column($raw_data, $this->getColumnNickname($column));
-                  $domain = array_unique($col);
+                  $domain = array_unique($domain);
                 }
 
                 /* TODO now also null appears as a value, check if it is an error or it is ok */
@@ -1112,7 +1112,7 @@ class DBFit
                 $depth = $this->getColumnTreatmentArg($column, 0);
 
                 /* Find unique values */
-                $classes = [];
+                /* $classes = [];
                 if ($raw_data === null) {
                     $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
                         NULL, true, true);
@@ -1133,9 +1133,9 @@ class DBFit
                         $classes = array_unique($classes);
                     }
                 }
-                else {
+                else { */
                     /* I need to extrapolate the column (array indexes don't come in handy) */
-                    $temp = [];
+                    /* $temp = [];
                     foreach ($raw_data as $i => $raw_row) {
                         $raw_row = get_object_vars($raw_row);
                         $temp[$i] = $raw_row[$this->getColumnNickname($column)];
@@ -1145,7 +1145,7 @@ class DBFit
                     if ($transformer === NULL) {                        
                         /* TODO now also null appears as a value, check if it is an error or it is ok */
                         /* I think it is not okay, I try removing this at least for outputColumns*/
-                        $classes = array_unique($temp);
+                        /*$classes = array_unique($temp);
                         if ($isOutputAttribute) {
                             foreach ($classes as $i => $class) {
                                 if ($class === null)
@@ -1153,20 +1153,56 @@ class DBFit
                             }
                         }
                     }
-                }
-                if ($isOutputAttribute) {
-                    usort($classes, [$this, "cmp_nodes"]);
-                }
-                // var_dump($classes);
+                }*/
 
-                if (!count($classes)) {
+                /* Find unique values */
+                $domain = null;
+                if ($raw_data === null) {
+                  $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
+                      NULL, true, true);
+                  $domain = array_column($raw_data, $this->getColumnNickname($column));
+                }
+                else {
+                  /* I need to extrapolate the column (array indexes don't come in handy) */
+                  $domain = array_column($raw_data, $this->getColumnNickname($column));
+                  $domain = array_unique($domain);
+                }
+
+                /* TODO now also null appears as a value, check if it is an error or it is ok */
+                /* I think it is not okay, I try removing this at least for outputColumns*/
+                if ($isOutputAttribute) {
+                  foreach ($domain as $i => $val) {
+                    if ($val === null)
+                      unset($domain[$i]);
+                  }
+                }
+
+                /* Apply transform to $domain */
+                $transformer = $this->getColumnTreatmentArg($column, 1);
+                if ($transformer !== NULL) {
+                    // $transformer = function ($x) { return [$x]; };
+                    foreach ($val as $domain) {
+                        $values = $transformer($val);
+                        if ($values !== NULL) {
+                            $domain = array_merge($domain, $values);
+                        }
+                    }
+                    $domain = array_unique($domain);
+                }
+
+                if ($isOutputAttribute) {
+                    usort($domain, [$this, "cmp_nodes"]);
+                }
+                // var_dump($domain);
+
+                if (!count($domain)) {
                     // warn("Couldn't apply ForceSet (depth: " . toString($depth) . ") to column " . $this->getColumnName($column) . ". No data instance found.");
                     $attributes = NULL;
-                } else if (count($classes) > 2) {
+                } else if (count($domain) > 2) {
                     $this->setColumnTreatment($column, "ForceSet");
-                    $attributes = $this->forceCategoricalBinary($depth, $classes, $attrName);
+                    $attributes = $this->forceCategoricalBinary($depth, $domain, $attrName);
                 } else {
-                    $attributes = [new DiscreteAttribute($attrName, "enum", $classes)];
+                    $attributes = [new DiscreteAttribute($attrName, "enum", $domain)];
                 }
                 if($timing) $tac = microtime(TRUE);
                 if($timing) echo "case forceCategorical took : " .  abs($tic - $tac) . "seconds.\n\n";
@@ -1610,6 +1646,7 @@ class DBFit
 
         /* Read the dataframes specific to this recursion path. */
         $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true, $timing);
+        //dd($rawDataframe);
         if($timing) $tac = microtime(TRUE);
         if($timing) echo "after readData: " .  abs($tic - $tac) . "seconds.\n";
 
@@ -1747,7 +1784,7 @@ class DBFit
                 $prediction['rule_stats'] = $ruleMeasures;
                 $prediction['subclasses'] = $this->predictByIdentifier(
                     $idVal,
-                    array_merge($recursionPath, [[$i_prob, $className]]),
+                    array_merge($recursionPath, [[$i_prob, $predictedStringVal]]),
                     $idModelVersion,
                     $log,
                     $timing

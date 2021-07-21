@@ -41,7 +41,7 @@ class PredictByIdentifier extends Command
     /* Warn: this is just for trying stuff, because phpunit doesn't read config file and it's too big to replicate. */
     $db_fit = new DBFit();
     $modelVersion = ModelVersion::orderByDesc('id')->first(); # Get most recent version
-    $predictions = $db_fit->predictByIdentifier($idVal,[],$modelVersion->id, false, false);
+    $predictions = $db_fit->predictByIdentifier($idVal,[],$modelVersion->id, false, true);
     //dd("It worked");
     dd($predictions);
   }
