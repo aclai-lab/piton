@@ -1046,69 +1046,50 @@ class DBFit
                 $depth = $this->getColumnTreatmentArg($column, 0);
 
                 /* Find unique values */
-                $classes = [];
+                $domain = null;
                 if ($raw_data === null) {
-                    $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
-                        NULL, true, true);
-                    $transformer = $this->getColumnTreatmentArg($column, 1);
-                    if ($transformer === NULL) {
-                        foreach ($raw_data as $raw_row) {
-                            $raw_row = get_object_vars($raw_row);
-                            $classes[] = $raw_row[$this->getColumnNickname($column)];
-                        }
-                    } else {
-                        // $transformer = function ($x) { return [$x]; };
-                        foreach ($raw_data as $raw_row) {
-                            $values = $transformer($raw_row[$this->getColumnNickname($column)]);
-                            if ($values !== NULL) {
-                                $classes = array_merge($classes, $values);
-                            }
-                        }
-                        $classes = array_unique($classes);
-                    }
+                  $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
+                      NULL, true, true);
+                  $domain = array_column($raw_data, $this->getColumnNickname($column));
                 }
                 else {
-                    /* I need to extrapolate the column (array indexes don't come in handy) */
-                    /* $temp = [];
-                    foreach ($raw_data as $i => $raw_row) {
-                        $raw_row = get_object_vars($raw_row);
-                        $temp[$i] = $raw_row[$this->getColumnNickname($column)];
-                    } */
-                    /* TODO do this for force categorical */
-                    $temp = array_column($raw_data, $this->getColumnNickname($column));
-
-                    $transformer = $this->getColumnTreatmentArg($column, 1);
-                    if ($transformer === NULL) {                        
-                        /* TODO now also null appears as a value, check if it is an error or it is ok */
-                        /* I think it is not okay, I try removing this at least for outputColumns*/
-                        $classes = array_unique($temp);
-                        if ($isOutputAttribute) {
-                            foreach ($classes as $i => $class) {
-                                if ($class === null)
-                                    unset($classes[$i]);
-                            }
-                        }
-                    }
-                    else {
-                        foreach ($temp as $raw_row) {
-                            $values = $transformer($raw_row);
-                            if ($values !== NULL) {
-                                $classes = array_merge($classes, $values);
-                            }
-                        }
-                        $classes = array_unique($classes);
-                    }
+                  /* I need to extrapolate the column (array indexes don't come in handy) */
+                  $domain = array_column($raw_data, $this->getColumnNickname($column));
+                  $domain = array_unique($col);
                 }
+
+                /* TODO now also null appears as a value, check if it is an error or it is ok */
+                /* I think it is not okay, I try removing this at least for outputColumns*/
                 if ($isOutputAttribute) {
-                    usort($classes, [$this, "cmp_nodes"]);
+                  foreach ($domain as $i => $val) {
+                    if ($val === null)
+                      unset($domain[$i]);
+                  }
                 }
-                // var_dump($classes);
 
-                if (!count($classes)) {
+                /* Apply transform to $domain */
+                $transformer = $this->getColumnTreatmentArg($column, 1);
+                if ($transformer !== NULL) {
+                    // $transformer = function ($x) { return [$x]; };
+                    foreach ($val as $domain) {
+                        $values = $transformer($val);
+                        if ($values !== NULL) {
+                            $domain = array_merge($domain, $values);
+                        }
+                    }
+                    $domain = array_unique($domain);
+                }
+
+                if ($isOutputAttribute) {
+                    usort($domain, [$this, "cmp_nodes"]);
+                }
+                // var_dump($domain);
+
+                if (!count($domain)) {
                     // warn("Couldn't apply ForceSet (depth: " . toString($depth) . ") to column " . $this->getColumnName($column) . ". No data instance found.");
                     $attributes = NULL;
                 } else {
-                    $attributes = $this->forceCategoricalBinary($depth, $classes, $attrName);
+                    $attributes = $this->forceCategoricalBinary($depth, $domain, $attrName);
                 }
                 if($timing) $tac = microtime(TRUE);
                 if($timing) echo "case ForceSet took : " .  abs($tic - $tac) . "seconds.\n\n";
