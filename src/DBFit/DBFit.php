@@ -285,7 +285,8 @@ class DBFit
      * so there are k different problems, and this function computes k sets of instances, with same input
      * attributes/values and different output ones.
      */
-    private function readData($idVal = NULL, array $recursionPath = [], ?int &$numDataframes = null, bool $silentSQL = false, bool $timing = false): ?array
+    private function readData($idVal = NULL, array $recursionPath = [],
+                                ?int &$numDataframes = null, bool $silentSQL = false, bool $predicting = false, bool $timing = false): ?array
     {
         if ($timing) echo "Into readData\n";
         if ($timing) $tic = microtime(TRUE);
@@ -370,7 +371,10 @@ class DBFit
         $raw_data = $this->SQLSelectColumns($this->inputColumns, null, $recursionPath, $outputColumn,
                 $silentSQL);
         /* Obtaining attributes and assigning columns to attributes */
-        $this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
+        if ($predicting)
+            $this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
+        else
+            $this->assignColumnAttributes($outputColumn, null, $recursionPath, true, false);
         $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
 
         $rawDataframe = NULL;
@@ -394,7 +398,10 @@ class DBFit
             /* Recompute and obtain input attributes in order to profit from attributes that are more specific to the current recursionPath. */
             foreach ($this->inputColumns as &$column) {
                 //$this->assignColumnAttributes($column, $recursionPath, false, true);
-                $this->assignColumnAttributes($column, $raw_data, $recursionPath, false, $timing);
+                if ($predicting)
+                    $this->assignColumnAttributes($column, $raw_data, $recursionPath, false, $timing);
+                else
+                    $this->assignColumnAttributes($column, null, $recursionPath, false, $timing);
             }
 
             if($timing) $tac = microtime(TRUE);
@@ -1645,7 +1652,7 @@ class DBFit
         $predictions = [];
 
         /* Read the dataframes specific to this recursion path. */
-        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true, $timing);
+        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true, true, $timing);
         //dd($rawDataframe);
         if($timing) $tac = microtime(TRUE);
         if($timing) echo "after readData: " .  abs($tic - $tac) . "seconds.\n";
