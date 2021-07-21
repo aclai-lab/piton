@@ -357,14 +357,21 @@ class DBFit
 
         /* Recompute and obtain output attributes in order to profit from attributes that are more specific to the current recursionPath. */
         $outputColumn = &$this->outputColumns[$recursionLevel];
-        //if ($idVal === NULL) { #debug
-            $this->assignColumnAttributes($outputColumn, $recursionPath, true, true);
-        //} #debug
-        if($timing) $tac = microtime(TRUE);
-        if($timing) echo "after assignColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
+        
+        // $this->assignColumnAttributes($outputColumn, $recursionPath, true, true);
+        // if($timing) $tac = microtime(TRUE);
+        // if($timing) echo "after assignColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
+        // $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
+        // if($timing) $tic = microtime(TRUE);
+        // if($timing) echo "after getColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
+        
+        /* New: only one read from database */
+        $raw_data = $this->SQLSelectColumns($this->inputColumns, NULL, $recursionPath, $outputColumn,
+                $silentSQL);
+
+        /* Obtaining attributes and assigning columns to attributes */
+        $this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
         $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
-        if($timing) $tic = microtime(TRUE);
-        if($timing) echo "after getColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
 
         $rawDataframe = NULL;
         $numDataframes = 0;
@@ -385,11 +392,10 @@ class DBFit
             }
 
             /* Recompute and obtain input attributes in order to profit from attributes that are more specific to the current recursionPath. */
-            //if ($idVal === NULL) { #debug
-                foreach ($this->inputColumns as &$column) {
-                    $this->assignColumnAttributes($column, $recursionPath, false, true);
-                }
-            //} #debug
+            foreach ($this->inputColumns as &$column) {
+                //$this->assignColumnAttributes($column, $recursionPath, false, true);
+                $this->assignColumnAttributes($column, $raw_data, $recursionPath, false, $timing);
+            }
 
             if($timing) $tac = microtime(TRUE);
             if($timing) echo "after assignColumnAttributes cycle: " .  abs($tic - $tac) . "seconds.\n";
@@ -450,8 +456,9 @@ class DBFit
             if (!$silentSQL) {
                 echo "Example query for LEVEL " . $recursionLevel . ", " . Utils::toString($recursionPath) . PHP_EOL;
             }
-            $raw_data = $this->SQLSelectColumns($this->inputColumns, $idVal, $recursionPath, $outputColumn,
-                $silentSQL);
+            // Already done
+            // $raw_data = $this->SQLSelectColumns($this->inputColumns, $idVal, $recursionPath, $outputColumn,
+            //     $silentSQL);
             if($timing) $tac = microtime(TRUE);
             if($timing) echo "after SQLSelectColumns cycle: " .  abs($tic - $tac) . "seconds.\n";
             $data = $this->readRawData($raw_data, $attributes, $columns);
@@ -1023,7 +1030,7 @@ class DBFit
     }
 
     /* Create and assign the corresponding attribute(s) to a given column */
-    function assignColumnAttributes(array &$column, array $recursionPath = [], bool $isOutputAttribute = false, bool $timing = false)
+    function assignColumnAttributes(array &$column, ?array $raw_data = null, array $recursionPath = [], bool $isOutputAttribute = false, bool $timing = false)
     {
         /* Attribute base-name */
         $attrName = $this->getColumnAttrName($column);
@@ -1040,23 +1047,46 @@ class DBFit
 
                 /* Find unique values */
                 $classes = [];
-                $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
-                    NULL, true, true);
-                $transformer = $this->getColumnTreatmentArg($column, 1);
-                if ($transformer === NULL) {
-                    foreach ($raw_data as $raw_row) {
-                        $raw_row = get_object_vars($raw_row);
-                        $classes[] = $raw_row[$this->getColumnNickname($column)];
+                if ($raw_data === null) {
+                    $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
+                        NULL, true, true);
+                    $transformer = $this->getColumnTreatmentArg($column, 1);
+                    if ($transformer === NULL) {
+                        foreach ($raw_data as $raw_row) {
+                            $raw_row = get_object_vars($raw_row);
+                            $classes[] = $raw_row[$this->getColumnNickname($column)];
+                        }
+                    } else {
+                        // $transformer = function ($x) { return [$x]; };
+                        foreach ($raw_data as $raw_row) {
+                            $values = $transformer($raw_row[$this->getColumnNickname($column)]);
+                            if ($values !== NULL) {
+                                $classes = array_merge($classes, $values);
+                            }
+                        }
+                        $classes = array_unique($classes);
                     }
-                } else {
-                    // $transformer = function ($x) { return [$x]; };
-                    foreach ($raw_data as $raw_row) {
-                        $values = $transformer($raw_row[$this->getColumnNickname($column)]);
-                        if ($values !== NULL) {
-                            $classes = array_merge($classes, $values);
+                }
+                else {
+                    /* I need to extrapolate the column (array indexes don't come in handy) */
+                    $temp = [];
+                    foreach ($raw_data as $i => $raw_row) {
+                        $raw_row = get_object_vars($raw_row);
+                        $temp[$i] = $raw_row[$this->getColumnNickname($column)];
+                    }
+
+                    $transformer = $this->getColumnTreatmentArg($column, 1);
+                    if ($transformer === NULL) {                        
+                        /* TODO now also null appears as a value, check if it is an error or it is ok */
+                        /* I think it is not okay, I try removing this at least for outputColumns*/
+                        $classes = array_unique($temp);
+                        if ($isOutputAttribute) {
+                            foreach ($classes as $i => $class) {
+                                if ($class === null)
+                                    unset($classes[$i]);
+                            }
                         }
                     }
-                    $classes = array_unique($classes);
                 }
                 if ($isOutputAttribute) {
                     usort($classes, [$this, "cmp_nodes"]);
@@ -1091,23 +1121,46 @@ class DBFit
 
                 /* Find unique values */
                 $classes = [];
-                $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
-                    NULL, true, true);
-                $transformer = $this->getColumnTreatmentArg($column, 1);
-                if ($transformer === NULL) {
-                    foreach ($raw_data as $raw_row) {
-                        $raw_row = get_object_vars($raw_row);
-                        $classes[] = $raw_row[$this->getColumnNickname($column)];
+                if ($raw_data === null) {
+                    $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
+                        NULL, true, true);
+                    $transformer = $this->getColumnTreatmentArg($column, 1);
+                    if ($transformer === NULL) {
+                        foreach ($raw_data as $raw_row) {
+                            $raw_row = get_object_vars($raw_row);
+                            $classes[] = $raw_row[$this->getColumnNickname($column)];
+                        }
+                    } else {
+                        // $transformer = function ($x) { return [$x]; };
+                        foreach ($raw_data as $raw_row) {
+                            $values = $transformer($raw_row[$this->getColumnNickname($column)]);
+                            if ($values !== NULL) {
+                                $classes = array_merge($classes, $values);
+                            }
+                        }
+                        $classes = array_unique($classes);
                     }
-                } else {
-                    // $transformer = function ($x) { return [$x]; };
-                    foreach ($raw_data as $raw_row) {
-                        $values = $transformer($raw_row[$this->getColumnNickname($column)]);
-                        if ($values !== NULL) {
-                            $classes = array_merge($classes, $values);
+                }
+                else {
+                    /* I need to extrapolate the column (array indexes don't come in handy) */
+                    $temp = [];
+                    foreach ($raw_data as $i => $raw_row) {
+                        $raw_row = get_object_vars($raw_row);
+                        $temp[$i] = $raw_row[$this->getColumnNickname($column)];
+                    }
+
+                    $transformer = $this->getColumnTreatmentArg($column, 1);
+                    if ($transformer === NULL) {                        
+                        /* TODO now also null appears as a value, check if it is an error or it is ok */
+                        /* I think it is not okay, I try removing this at least for outputColumns*/
+                        $classes = array_unique($temp);
+                        if ($isOutputAttribute) {
+                            foreach ($classes as $i => $class) {
+                                if ($class === null)
+                                    unset($classes[$i]);
+                            }
                         }
                     }
-                    $classes = array_unique($classes);
                 }
                 if ($isOutputAttribute) {
                     usort($classes, [$this, "cmp_nodes"]);
@@ -1513,8 +1566,9 @@ class DBFit
     function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false, bool $timing = false) : array
     {
         if ($timing) echo "Into predictByIdentifier\n";
-        if ($timing) $tic = microtime(TRUE);
-        if ($timing) $bigStart = $tic;
+        //if ($timing)
+            $start = microtime(TRUE);
+        if ($timing) $tic = $start;
         /* The prediction is based on the problem associated with the model version. */
         $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
         $idProblem = $modelVersion->id_problem;
@@ -1563,7 +1617,7 @@ class DBFit
         $predictions = [];
 
         /* Read the dataframes specific to this recursion path. */
-        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true, true);
+        $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true, $timing);
         if($timing) $tac = microtime(TRUE);
         if($timing) echo "after readData: " .  abs($tic - $tac) . "seconds.\n";
 
@@ -1636,7 +1690,7 @@ class DBFit
             }
 
             /* Perform local prediction */
-            $predictionOutput = $model->predict($dataframe, true, false, true);
+            $predictionOutput = $model->predict($dataframe, true, false, true, null);
             if($timing) $tac = microtime(TRUE);
             if($timing) echo "after predict: " .  abs($tic - $tac) . "seconds.\n";
             $predictedVal     = $predictionOutput['predictions'][$idVal];
@@ -1719,8 +1773,10 @@ class DBFit
             echo PHP_EOL;
         }
 
-        if ($timing) $end = microtime(TRUE);
-        if ($timing) echo "predictByIdentifier took " . ($end - $bigStart) . " seconds to complete." . PHP_EOL;
+        //if ($timing)
+            $end = microtime(TRUE);
+        //if ($timing)
+            echo "predictByIdentifier took " . ($end - $start) . " seconds to complete." . PHP_EOL;
 
         return $predictions;
     }
