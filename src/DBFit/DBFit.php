@@ -1069,11 +1069,13 @@ class DBFit
                 }
                 else {
                     /* I need to extrapolate the column (array indexes don't come in handy) */
-                    $temp = [];
+                    /* $temp = [];
                     foreach ($raw_data as $i => $raw_row) {
                         $raw_row = get_object_vars($raw_row);
                         $temp[$i] = $raw_row[$this->getColumnNickname($column)];
-                    }
+                    } */
+                    /* TODO do this for force categorical */
+                    $temp = array_column($raw_data, $this->getColumnNickname($column));
 
                     $transformer = $this->getColumnTreatmentArg($column, 1);
                     if ($transformer === NULL) {                        
@@ -1086,6 +1088,15 @@ class DBFit
                                     unset($classes[$i]);
                             }
                         }
+                    }
+                    else {
+                        foreach ($temp as $raw_row) {
+                            $values = $transformer($raw_row);
+                            if ($values !== NULL) {
+                                $classes = array_merge($classes, $values);
+                            }
+                        }
+                        $classes = array_unique($classes);
                     }
                 }
                 if ($isOutputAttribute) {
