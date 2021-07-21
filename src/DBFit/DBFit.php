@@ -1729,6 +1729,11 @@ class DBFit
             $predictionOutput = $model->predict($dataframe, true, false, true, null);
             if($timing) $tac = microtime(TRUE);
             if($timing) echo "after predict: " .  abs($tic - $tac) . "seconds.\n";
+            /* If prediction failes (it could happen for suclasses), return */
+            if (!isset($predictionOutput['predictions'][$idVal])) {
+                if ($log) echo "Couldn't perform predictions on $className for $idVal\n";
+                return [];
+            }
             $predictedVal     = $predictionOutput['predictions'][$idVal];
             $storedRules      = $predictionOutput['storedRules'][$idVal];
             if ($predictionOutput['rules_measures'][$idVal] != "") {
