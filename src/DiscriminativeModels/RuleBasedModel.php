@@ -980,7 +980,13 @@ table.blueTable tfoot .links a{
         Utils::die_error("Couldn't recreate model from db");
       }
       foreach ($serializedAttributes as $serializedAttribute) {
-        $attributes[] = Attribute::createFromArray($serializedAttribute);
+        /**
+         * For the moment, it doesn't add the attribute "ai_eligible" when re-creating
+         * a model from DB. TODO generalize this, maybe adding a field in config file
+         * (and therefore changing the inputColumns to be read in readData).
+         */
+        if ($serializedAttribute["name"] !== "ai_eligibile")
+            $attributes[] = Attribute::createFromArray($serializedAttribute);
       }
       $model->setAttributes($attributes);
       $model->reindexAttributes();

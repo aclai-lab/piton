@@ -397,9 +397,14 @@ class DBFit
 
             /* Recompute and obtain input attributes in order to profit from attributes that are more specific to the current recursionPath. */
             foreach ($this->inputColumns as &$column) {
-                //$this->assignColumnAttributes($column, $recursionPath, false, true);
-                if ($predicting)
+                if ($predicting) {
+                    //preg_match('/(ai_eligibile)/', $column['name'], $matches);
+                    //preg_match('/(data_referto)/', $column['name'], $matches);
+                    //dd($matches);
+
                     $this->assignColumnAttributes($column, $raw_data, $recursionPath, false, $timing);
+                    //dd($column);
+                }
                 else
                     $this->assignColumnAttributes($column, null, $recursionPath, false, $timing);
             }
@@ -409,7 +414,14 @@ class DBFit
 
             $inputAttributes = [];
             foreach ($this->inputColumns as &$column) {
-                if (in_array($this->getColumnName($column), $columnsToIgnore)) {
+                /**
+                 * For the moment, it doesn't include the attribute "ai_eligible" at prediction
+                 * time. TODO generalize this, maybe adding a field in config file
+                 * (and therefore changing the inputColumns to be read in readData).
+                 */
+                preg_match('/(ai_eligibile)/', $column['name'], $matches);
+                if (in_array($this->getColumnName($column), $columnsToIgnore) ||
+                    ($predicting && !empty($matches))) {
                     $attribute = NULL;
                 } else {
                     $attribute = $this->getColumnAttributes($column, $recursionPath);
