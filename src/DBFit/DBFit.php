@@ -222,6 +222,20 @@ class DBFit
     */
     private $globalNodeOrder;
 
+    /**
+     * Information about the hierarchy of problems. It is creative recursively during UpdateModels,
+     * stored into the database as a model_version's field, and fetched ad prediction time, to
+     * enhance performance.
+     * It is structured as follow:
+     * - name of the problem (e.g. the class we are classifying by)
+     * - recursion path
+     * - model ID
+     * - ids of training instances
+     * - ids of testing instances
+     * - attributes used at training time
+     */
+    private $hierarchy;
+
     /* Default options, to be set via ->setDefaultOption() */
     private $defaultOptions = [
         /* Default training mode in use */
@@ -1373,8 +1387,31 @@ class DBFit
         $this->setColumnAttributes($column, $recursionPath, $attributes);
     }
 
+    /**
+     * Set node of hierarchy structure. It can be used at training time to set information about
+     * the hierarchy to be stored in the database.
+     */
+    protected function setHierarchyNode(object $model, ?string $fatherNode, int $modelId, array $recursionPath)
+    {
+        $modelName = DBFit::cleanClassName($model->getClassAttribute()->getName());
+        
+        if ($fatherNode === null) {
+            /* Case Level 0 */
+            $this->hierarchy[$modelName]['name'] = $modelName;
+            $this->hierarchy[$modelName]['model_id'] = $modelId;
+            $this->hierarchy[$modelName]['sub-problems'] = [];
+        }
+        else {
+            /* Case sub-class */
+            //dd($recursionPath);
+            $fatherName = DBFit::cleanClassName($fatherNode);
+            $this->hierarchy[$fatherName]['sub-problems'][$modelName]['name'] = $modelName;
+            $this->hierarchy[$fatherName]['sub-problems'][$modelName]['model_id'] = $modelId;
+        }
+    }
+
     /* Train and test all the model tree on the available data, and save to database */
-    function updateModel(int $idModelVersion, array $recursionPath = [])
+    public function updateModel(int $idModelVersion, array $recursionPath = [])
     {
         echo "DBFit->updateModel(" . Utils::toString($recursionPath) . ")" . PHP_EOL;
 
@@ -1427,6 +1464,7 @@ class DBFit
             }
 
             /* If data is too unbalanced, skip training */
+            /* TODO inside if, skip node if number of instance is too little */
             if ($this->getCutOffValue() !== NULL &&
                 !$dataframe->checkCutOff($this->getCutOffValue())) {
                 echo "Skipping node due to unbalanced dataset found"
@@ -1436,6 +1474,7 @@ class DBFit
                     // . $this->getCutOffValue()
                     // . ")";
                     . "." . PHP_EOL;
+                /* TODO not just continue, create empty node without recursion */
                 continue;
             }
 
@@ -1488,8 +1527,10 @@ class DBFit
             if (!empty($recursionPath)) {
                 $fatherNode = $recursionPath[array_key_last($recursionPath)][2];
             }
-            $model->saveToDB($idModelVersion, $recursionLevel, $fatherNode,
-                $this->learner->getName(), $testData, $trainData);
+            $modelId = $model->saveToDB($idModelVersion, $recursionLevel, $fatherNode,
+                                        $this->learner->getName(), $testData, $trainData);
+            
+            $this->setHierarchyNode($model, $fatherNode, $modelId, $recursionPath);
             //$model->dumpToDB($this->outputDB, $model_id);
             // . "_" . join("", array_map([$this, "getColumnName"], ...).);
 
@@ -1548,6 +1589,9 @@ class DBFit
             /** childPath = [i-prob, className, fatherNodeClassName] */
             $this->updateModel($idModelVersion, $childPath);
         }
+
+        if ($recursionPath === [])
+            print_r($this->hierarchy);
     }
 
     /**
@@ -1632,7 +1676,7 @@ class DBFit
               $this->setDefaultOption($defaultOption[0], $defaultOption[1]);
             }
             $this->setInputTables(config($problemName . '.inputTables'));
-            $this->setWhereClauses(config($problemName . '.whereClauses'));
+            $this->setWhereClauses(config($problemName . '.whereClauses'), true);
             $this->setOrderByClauses(config($problemName . '.orderByClauses'));
             $this->setIdentifierColumnName(config($problemName . '.identifierColumnName'));
             $this->setInputColumns(config($problemName . '.inputColumns'));
@@ -2552,8 +2596,18 @@ class DBFit
         return $this;
     }
 
-    function setWhereClauses($whereClauses): self
+    public function setWhereClauses(array $whereClauses, bool $predicting = false) : self
     {
+        /* The retro-compatible case is hiddenly provided */
+        if (!$predicting && array_keys($whereClauses)[0] === "default" && array_keys($whereClauses)[1] === "onlyTraining") {
+            /* Training with both 'default' and 'onlyTraining' indexes*/    
+            $whereClauses = [array_merge($whereClauses['default'], $whereClauses['onlyTraining'])];
+        }
+        else if (array_keys($whereClauses)[0] === "default") {
+            /* Predicting, or training if only 'default' exists as an index */
+            $whereClauses = [$whereClauses['default']];
+        }
+
         if (func_num_args() > count(get_defined_vars())) trigger_error(__FUNCTION__
             . " was supplied more arguments than it needed. Got the following arguments:" . PHP_EOL
             . Utils::toString(func_get_args()), E_USER_WARNING);

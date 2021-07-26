@@ -41,7 +41,6 @@ class CreatePitonModelVersionTable extends Migration
 				/* TODO can't I just use created_at? */
 				$table->date('date');
         /* Information about the hierarchy of problems. */
-        /* TODO check if this format could work. */
         $table->json('hierarchy')->nullable()->default(null);
 				/* TODO what columns for test results? The following line is temporary. */
 				$table->text('test_results')->nullable();

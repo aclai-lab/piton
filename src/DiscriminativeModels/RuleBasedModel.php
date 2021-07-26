@@ -535,10 +535,11 @@ table.blueTable tfoot .links a{
 
     /**
      * Save model to database.
+     * @return int The id for the stored model in the database.
     */
     function saveToDB(int $idModelVersion, int $recursionLevel = 0, ?string $fatherNode = null,
                       ?string $learnerName = null, ?Instances &$testData = NULL, ?Instances &$trainData = NULL,
-                      ?array $rulesAffRilThresholds = [0.2, 0.7])
+                      ?array $rulesAffRilThresholds = [0.2, 0.7]) : int
     {
         $allData = null;
         if ($testData !== NULL) {
@@ -714,7 +715,7 @@ table.blueTable tfoot .links a{
             $classAttrDomain = $classAttr->getDomain();
             #dd($classAttrDomain); #debug
 
-            ClassModel::create([
+            $classModel = ClassModel::create([
             'id_model_version' => $idModelVersion,
             'recursion_level' => $recursionLevel,
             'father_node' => $fatherNode,
@@ -775,6 +776,8 @@ table.blueTable tfoot .links a{
 
             'test_date' => date("Y-m-d H:i:s", date_timestamp_get(date_create()))
         ]);
+
+        return $classModel->id;
     }
 
     public function getAttributes(): array
