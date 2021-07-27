@@ -428,14 +428,7 @@ class DBFit
 
             $inputAttributes = [];
             foreach ($this->inputColumns as &$column) {
-                /**
-                 * For the moment, it doesn't include the attribute "ai_eligible" at prediction
-                 * time. TODO generalize this, maybe adding a field in config file
-                 * (and therefore changing the inputColumns to be read in readData).
-                 */
-                preg_match('/(ai_eligibile)/', $column['name'], $matches);
-                if (in_array($this->getColumnName($column), $columnsToIgnore) ||
-                    ($predicting && !empty($matches))) {
+                if (in_array($this->getColumnName($column), $columnsToIgnore)) {
                     $attribute = NULL;
                 } else {
                     $attribute = $this->getColumnAttributes($column, $recursionPath);
@@ -1590,8 +1583,8 @@ class DBFit
             $this->updateModel($idModelVersion, $childPath);
         }
 
-        if ($recursionPath === [])
-            print_r($this->hierarchy);
+        //if ($recursionPath === [])
+        //    print_r($this->hierarchy);
     }
 
     /**
