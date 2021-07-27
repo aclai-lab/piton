@@ -922,7 +922,7 @@ class DBFit
                         // Regenerate query until the previous constraint (ignoring the order clause)
                         $str_whereClause .= "(\n" . $this->SQLSelectColumns(
                                 [$this->readColumn($whereClause[0])]
-                                , NULL // Note: Here I loose the value for the ID column. Is this right?
+                                , $idVal // Note
                                 , $recursionPath
                                 , $outputColumn
                                 , $silent
