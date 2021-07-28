@@ -51,6 +51,7 @@ use aclai\piton\Learners\Learner;
 use aclai\piton\ModelVersion;
 use aclai\piton\Problem;
 use aclai\piton\RuleStats\RuleStats;
+use aclai\piton\Attributes\Attribute;
 
 class DBFit
 {
@@ -233,6 +234,10 @@ class DBFit
      * - ids of training instances
      * - ids of testing instances
      * - attributes used at training time
+     * 
+     * It is formed by two parts:
+     *  - ['outputAttributes'] containing the output attributes associated with the hierarchy
+     *  - ['hierarchyNodes'] contatining the nodes of the hierarchy
      */
     private $hierarchy;
 
@@ -302,6 +307,7 @@ class DBFit
     private function readData($idVal = NULL, array $recursionPath = [],
                                 ?int &$numDataframes = null, bool $silentSQL = false, bool $predicting = false, bool $timing = false): ?array
     {
+        //$idVal = null; # debug
         if ($timing) echo "Into readData\n";
         if ($timing) $tic = microtime(TRUE);
         if ($timing) $bigStart = $tic;
@@ -373,23 +379,50 @@ class DBFit
         /* Recompute and obtain output attributes in order to profit from attributes that are more specific to the current recursionPath. */
         $outputColumn = &$this->outputColumns[$recursionLevel];
         
-        // $this->assignColumnAttributes($outputColumn, $recursionPath, true, true);
-        // if($timing) $tac = microtime(TRUE);
-        // if($timing) echo "after assignColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
-        // $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
-        // if($timing) $tic = microtime(TRUE);
-        // if($timing) echo "after getColumnAttributes: " .  abs($tic - $tac) . "seconds.\n";
-        
         /* New: only one read from database */
         /* We want to call this with just with $idVal  */
-        $raw_data = $this->SQLSelectColumns($this->inputColumns, null, $recursionPath, $outputColumn,
-                $silentSQL);
-        /* Obtaining attributes and assigning columns to attributes */
-        if ($predicting)
-            $this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
+        //$tac = microtime(TRUE);
+        if ($idVal === null)
+            $raw_data = $this->SQLSelectColumns($this->inputColumns, null, $recursionPath, $outputColumn,
+                        $silentSQL);
         else
-            $this->assignColumnAttributes($outputColumn, null, $recursionPath, true, false);
-        $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
+            $raw_data = $this->SQLSelectColumns($this->inputColumns, $idVal, $recursionPath, $outputColumn,
+                        $silentSQL);
+
+        /* Check */
+        if ($raw_data === []) {
+            return [];
+        }
+
+        $this->assignColumnAttributes($outputColumn, null, $recursionPath, true, false);
+
+        /* Obtaining attributes and assigning columns to attributes */
+        if ($idVal === NULL) {
+            $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
+            if ($recursionLevel === 0) {
+                foreach ($outputAttributes as $oa)
+                    $this->hierarchy['outputAttributes'][0][] = $oa->serializeToArray();
+            }
+            else {
+                foreach ($outputAttributes as $oa)
+                    $this->hierarchy['outputAttributes'][$recursionLevel][$recursionPath[0][1]][] = $oa->serializeToArray();
+            }
+        }
+        else {
+            //$this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
+
+            $outputAttributes = [];
+            if ($recursionLevel === 0) {
+                foreach ($this->hierarchy['outputAttributes'][$recursionLevel] as $oa) {
+                    $outputAttributes[] = Attribute::createFromArray($oa);
+                }
+            }
+            else {
+                foreach ($this->hierarchy['outputAttributes'][$recursionLevel][$recursionPath[0][1]] as $oa) {
+                    $outputAttributes[] = Attribute::createFromArray($oa);
+                }
+            }
+        }
 
         $rawDataframe = NULL;
         $numDataframes = 0;
@@ -409,36 +442,94 @@ class DBFit
                 }
             }
 
+            if ($idVal !== null) {
+                /* In this case, the last element is equal to $idVal */
+                $v = (array)$raw_data[0];
+                array_pop($v);
+                $raw_data[0] = $v;
+            }
+
             /* Recompute and obtain input attributes in order to profit from attributes that are more specific to the current recursionPath. */
             foreach ($this->inputColumns as &$column) {
-                if ($predicting) {
-                    //preg_match('/(ai_eligibile)/', $column['name'], $matches);
-                    //preg_match('/(data_referto)/', $column['name'], $matches);
-                    //dd($matches);
-
-                    $this->assignColumnAttributes($column, $raw_data, $recursionPath, false, $timing);
-                    //dd($column);
-                }
-                else
+                if ($idVal === NULL) {
                     $this->assignColumnAttributes($column, null, $recursionPath, false, $timing);
-            }
-
-            if($timing) $tac = microtime(TRUE);
-            if($timing) echo "after assignColumnAttributes cycle: " .  abs($tic - $tac) . "seconds.\n";
-
-            $inputAttributes = [];
-            foreach ($this->inputColumns as &$column) {
-                if (in_array($this->getColumnName($column), $columnsToIgnore)) {
-                    $attribute = NULL;
-                } else {
-                    $attribute = $this->getColumnAttributes($column, $recursionPath);
+                    $inputAttributes = [];
+                    foreach ($this->inputColumns as &$column) {
+                        if (in_array($this->getColumnName($column), $columnsToIgnore)) {
+                            $attribute = NULL;
+                        } else {
+                            $attribute = $this->getColumnAttributes($column, $recursionPath);
+                        }
+                        $inputAttributes[] = $attribute;
+                    }
                 }
-                $inputAttributes[] = $attribute;
+                else {
+                    if ($recursionLevel === 0) {
+                        $k = array_key_first($this->hierarchy['hierarchyNodes'][0]);
+                        foreach ($this->hierarchy['hierarchyNodes'][0][$k]['attributes'] as $a) {
+                            $inputAttributes[] = Attribute::createFromArray($a);
+                        }
+                    }
+                    else {
+                        $k = array_key_first($this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]]);
+                        foreach ($this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'] as $a) {
+                            $inputAttributes[] = Attribute::createFromArray($a);
+                        }
+                    }
+                    $raw_data = $this->assignColumnAttributes($column, $raw_data, $recursionPath, false, $timing);
+                }
             }
-            if($timing) $tic = microtime(TRUE);
-            if($timing) echo "after getColumnName/getColumnAttributes cycle: " .  abs($tic - $tac) . "seconds.\n";
 
-            $attributes = array_merge([$outputAttributes], $inputAttributes);
+            if ($idVal !== null) {
+                if ($recursionLevel === 0)
+                    $attributes = $this->hierarchy['hierarchyNodes'][0][$k]['attributes'];
+                else
+                    $attributes = $this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'];
+                array_shift($attributes);
+                foreach ($attributes as $i => $a)
+                    $attributes[$i] = Attribute::CreateFromArray($a);
+
+                $inst = array_values((array)$raw_data[0]);
+                array_shift($inst);
+
+                /* Get representation fonr Discrete Attributes */
+                foreach ($attributes as $i => &$a) {
+                    if ($a instanceof DiscreteAttribute) {
+                        $domain = array_flip($a->getDomain());
+                        if (isset($domain[$inst[$i]]))
+                            $inst[$i] = $domain[$inst[$i]];
+                        else {
+                            /* In this case, I add an attribute possible value to domain, that will never appear in rules */
+                            $domain = $a->getDomain();
+                            $domain[] = 'null';
+                            $a->setDomain($domain);
+
+                            $domain = array_flip($a->getDomain());
+                            $inst[$i] = $domain['null'];
+                        }
+                    }
+                }
+
+                /* Add output attributes */
+                $attributes = array_merge($outputAttributes, $attributes);
+
+                foreach ($outputAttributes as $oa) {
+                    array_unshift($inst, 0);
+                }
+
+
+                
+                $data[0] = $attributes;
+                $data[1][$idVal] = $inst;
+                $data[2] = $outputAttributes;
+
+                $numDataframes = count($outputAttributes);
+                
+                return $data;
+            }
+            else {
+                $attributes = array_merge([$outputAttributes], $inputAttributes);
+            }
             $columns = array_merge([$outputColumn], $this->inputColumns);
 
             if ($idVal === NULL && !count($recursionPath)) {
@@ -456,42 +547,13 @@ class DBFit
                     }
                 }
             }
-            # debug
-            /*else {
-                echo "LEVEL 1 attributes list:" . PHP_EOL;
-                foreach ($attributes as $i_col => $attrs) {
-                    if ($attrs === NULL) {
-                        echo "[$i_col]: " . Utils::toString($attrs) . PHP_EOL;
-                    } else if (count($attrs) > 1) {
-                        foreach ($attrs as $i => $attr)
-                            echo "[$i_col], $i/" . count($attrs) . ": " . $attr->toString() . PHP_EOL;
-                    } else if (count($attrs) == 1) {
-                        echo "[$i_col]: " . $attrs[0]->toString() . PHP_EOL;
-                    } else {
-                        echo "[$i_col]: " . Utils::toString($attrs) . PHP_EOL;
-                    }
-                }
-            }
-            */
-
-            /* Finally obtain data */
-            // $silentSQL = (count($recursionPath) && $recursionPath[count($recursionPath)-1][0] != 0);
-            // $silentSQL = false;
-            // $silentExcelOutput = false;
-
             if (!$silentSQL) {
                 echo "Example query for LEVEL " . $recursionLevel . ", " . Utils::toString($recursionPath) . PHP_EOL;
             }
-            // Already done
-            // $raw_data = $this->SQLSelectColumns($this->inputColumns, $idVal, $recursionPath, $outputColumn,
-            //     $silentSQL);
-            if($timing) $tac = microtime(TRUE);
-            if($timing) echo "after SQLSelectColumns cycle: " .  abs($tic - $tac) . "seconds.\n";
-            $data = $this->readRawData($raw_data, $attributes, $columns);
-            if($timing) $tic = microtime(TRUE);
-            if($timing) echo "after readRawData: " .  abs($tic - $tac) . "seconds.\n";
-            /* Deflate attribute and data arrays (breaking the symmetry with columns) */
 
+            $data = $this->readRawData($raw_data, $attributes, $columns);
+
+            /* Deflate attribute and data arrays (breaking the symmetry with columns) */
             $final_data = [];
             foreach ($data as $instance_id => $attr_vals) {
                 $row = [];
@@ -1055,17 +1117,55 @@ class DBFit
         return $whereClauses;
     }
 
+    
+
     /* Create and assign the corresponding attribute(s) to a given column */
     function assignColumnAttributes(array &$column, ?array $raw_data = null, array $recursionPath = [], bool $isOutputAttribute = false, bool $timing = false)
     {
         /* Attribute base-name */
         $attrName = $this->getColumnAttrName($column);
 
-        /* Start timing from here */
-        if($timing) $tic = microtime(TRUE);
-        if($timing) echo "\nInside assignColumnAttributes:.\n";
+        /* At prediction time, I make the attributes the same as the models' attributes */
+        if ($raw_data !== null) {
+            $recursionLevel = count($recursionPath);
 
-        // var_dump($column);
+            if ($recursionLevel === 0) {
+                $k = array_key_first($this->hierarchy['hierarchyNodes'][0]);
+                $attributes = $this->hierarchy['hierarchyNodes'][0][$k]['attributes'];
+            }
+            else {
+                $k = array_key_first($this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]]);
+                $attributes = $this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'];
+            }
+            if (array_search($attrName, array_column($attributes, 'name')) === false) {
+
+                $value = array_column($raw_data, $this->getColumnNickname($column))[0];
+
+                $input = preg_quote($attrName, '~'); // don't forget to quote input string!
+                $result = preg_grep('~' . $input . '~', array_column($attributes, 'name'));
+
+                /* Use value and result to create new attributes for instance and set only
+                    result_value to value, the other to NO_value; then remove result from instance */
+                $raw_data_array = (array)$raw_data[0];
+                unset($raw_data_array[$this->getColumnNickname($column)]);
+                foreach ($result as $i => $newAttribute) {
+                    if ($newAttribute === $attrName . '_' . $value)
+                        $raw_data_array[$this->getColNickname($newAttribute)] = $value;
+                    else
+                        $raw_data_array[$this->getColNickname($newAttribute)] = "NO_". DBFit::CleanClassName($newAttribute);
+                    /* Also move correspondent attribute to the end of array: doing so, they are in the same order */
+                    $v = $attributes[$i];
+                    unset($attributes[$i]);
+                    $attributes[] = $v;
+                }
+                if ($recursionLevel === 0)
+                    $this->hierarchy['hierarchyNodes'][0][$k]['attributes'] = array_values($attributes);
+                else
+                    $this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'] = array_values($attributes);
+                $raw_data[0] = (object)$raw_data_array;
+            }
+        }
+        
         switch (true) {
             /* Forcing a set of binary categorical attributes */
             case $this->getColumnTreatmentType($column) == "ForceSet":
@@ -1082,15 +1182,30 @@ class DBFit
                   /* I need to extrapolate the column (array indexes don't come in handy) */
                   $domain = array_column($raw_data, $this->getColumnNickname($column));
                   $domain = array_unique($domain);
+                  $domain = array_filter($domain, "aclai\\piton\\Utils::notNull");
+                  $domain = array_values($domain);
                 }
 
-                /* TODO now also null appears as a value, check if it is an error or it is ok */
-                /* I think it is not okay, I try removing this at least for outputColumns*/
+                /* Also null appears as a value, I remove it for outputColumns */
                 if ($isOutputAttribute) {
                   foreach ($domain as $i => $val) {
                     if ($val === null)
                       unset($domain[$i]);
                   }
+                }
+
+                /* Apply transform to $domain */
+                $transformer = $this->getColumnTreatmentArg($column, 1);
+                if ($transformer !== NULL) {
+                    // $transformer = function ($x) { return [$x]; };
+                    foreach ($val as $domain) {
+                        $values = $transformer($val);
+                        if ($values !== NULL) {
+                            $domain = array_merge($domain, $values);
+                        }
+                    }
+                    $domain = array_unique($domain);
+                    $domain = array_values($domain);
                 }
 
                 /* Apply transform to $domain */
@@ -1138,50 +1253,6 @@ class DBFit
                 $depth = $this->getColumnTreatmentArg($column, 0);
 
                 /* Find unique values */
-                /* $classes = [];
-                if ($raw_data === null) {
-                    $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
-                        NULL, true, true);
-                    $transformer = $this->getColumnTreatmentArg($column, 1);
-                    if ($transformer === NULL) {
-                        foreach ($raw_data as $raw_row) {
-                            $raw_row = get_object_vars($raw_row);
-                            $classes[] = $raw_row[$this->getColumnNickname($column)];
-                        }
-                    } else {
-                        // $transformer = function ($x) { return [$x]; };
-                        foreach ($raw_data as $raw_row) {
-                            $values = $transformer($raw_row[$this->getColumnNickname($column)]);
-                            if ($values !== NULL) {
-                                $classes = array_merge($classes, $values);
-                            }
-                        }
-                        $classes = array_unique($classes);
-                    }
-                }
-                else { */
-                    /* I need to extrapolate the column (array indexes don't come in handy) */
-                    /* $temp = [];
-                    foreach ($raw_data as $i => $raw_row) {
-                        $raw_row = get_object_vars($raw_row);
-                        $temp[$i] = $raw_row[$this->getColumnNickname($column)];
-                    }
-
-                    $transformer = $this->getColumnTreatmentArg($column, 1);
-                    if ($transformer === NULL) {                        
-                        /* TODO now also null appears as a value, check if it is an error or it is ok */
-                        /* I think it is not okay, I try removing this at least for outputColumns*/
-                        /*$classes = array_unique($temp);
-                        if ($isOutputAttribute) {
-                            foreach ($classes as $i => $class) {
-                                if ($class === null)
-                                    unset($classes[$i]);
-                            }
-                        }
-                    }
-                }*/
-
-                /* Find unique values */
                 $domain = null;
                 if ($raw_data === null) {
                   $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
@@ -1192,10 +1263,11 @@ class DBFit
                   /* I need to extrapolate the column (array indexes don't come in handy) */
                   $domain = array_column($raw_data, $this->getColumnNickname($column));
                   $domain = array_unique($domain);
+                  $domain = array_filter($domain, "aclai\\piton\\Utils::notNull");
+                  $domain = array_values($domain);
                 }
 
-                /* TODO now also null appears as a value, check if it is an error or it is ok */
-                /* I think it is not okay, I try removing this at least for outputColumns*/
+                /* Also null appears as a value, I remove it for outputColumns */
                 if ($isOutputAttribute) {
                   foreach ($domain as $i => $val) {
                     if ($val === null)
@@ -1214,6 +1286,7 @@ class DBFit
                         }
                     }
                     $domain = array_unique($domain);
+                    $domain = array_values($domain);
                 }
 
                 if ($isOutputAttribute) {
@@ -1234,28 +1307,6 @@ class DBFit
                 if($timing) echo "case forceCategorical took : " .  abs($tic - $tac) . "seconds.\n\n";
                 break;
 
-            /* Find unique values */
-            /*$classes = [];
-            $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath, NULL, true, true);
-            $transformer = $this->getColumnTreatmentArg($column, 0);
-            if ($transformer === NULL) {
-                foreach ($raw_data as $raw_row) {
-                    $raw_row = get_object_vars($raw_row);
-                    $classes[] = $raw_row[$this->getColumnNickname($column)];
-                }
-            } else {
-                Utils::die_error("TODO transformer as first argument of ForceCategorical");
-                // ...
-            }
-
-            if (!count($classes)) {
-                Utils::warn("Couldn't apply ForceCategorical to column " . $this->getColumnName($column)
-                    . ". No data instance found.");
-                $attributes = NULL;
-            }
-
-            $attributes = [new DiscreteAttribute($attrName, "enum", $classes)];
-            break;*/
             /* Numeric column */
             case in_array($this->getColumnAttrType($column), ["int", "float", "double"]):
                 $attributes = [new ContinuousAttribute($attrName, $this->getColumnAttrType($column))];
@@ -1378,28 +1429,50 @@ class DBFit
 
         /* Each column has a tree of attributes, because the set of attributes for the column depends on the recursion path. This is done in order to leverage predicates that are the most specific.  */
         $this->setColumnAttributes($column, $recursionPath, $attributes);
+
+        if ($raw_data !== null)
+            return $raw_data;
     }
 
     /**
      * Set node of hierarchy structure. It can be used at training time to set information about
      * the hierarchy to be stored in the database.
+     * Each node is in the form:
+     *  - name, id_model, ... (properties of the node)
+     *  - id of the father-problem node
+     *  - ids of the sub-problems nodes
+     * 
+     * Nodes are indexed by problem name (TODO is this safe? This is done to simplify research)
+     * Note that this structure is similar to a double-linked list
      */
-    protected function setHierarchyNode(object $model, ?string $fatherNode, int $modelId, array $recursionPath)
+    protected function setHierarchyNode(object $model, ?string $fatherNode, int $modelId, int $recursionLevel)
     {
+        $hierarchyNode = [];
+
+        /* The name of the class of the model/problem solved by the problem */
         $modelName = DBFit::cleanClassName($model->getClassAttribute()->getName());
+        $hierarchyNode['name'] = $modelName;
+        /* The id of the class_model instance associated to the molde into the database */
+        $hierarchyNode['model_id'] = $modelId;
+        foreach ($model->getAttributes() as $a)
+            $hierarchyNode['attributes'][] =  $a->serializeToArray();
         
         if ($fatherNode === null) {
             /* Case Level 0 */
-            $this->hierarchy[$modelName]['name'] = $modelName;
-            $this->hierarchy[$modelName]['model_id'] = $modelId;
-            $this->hierarchy[$modelName]['sub-problems'] = [];
-        }
-        else {
-            /* Case sub-class */
-            //dd($recursionPath);
-            $fatherName = DBFit::cleanClassName($fatherNode);
-            $this->hierarchy[$fatherName]['sub-problems'][$modelName]['name'] = $modelName;
-            $this->hierarchy[$fatherName]['sub-problems'][$modelName]['model_id'] = $modelId;
+            /* The name of the father-problem node, in this case it is empty (sons of root node) */
+            $hierarchyNode['father_node'] = [];
+
+            $this->hierarchy['hierarchyNodes'][0][$modelName] = $hierarchyNode;
+        } else {
+            /* Case sub-problem */
+            /* The name of the father-problem node */
+            $fatherName = DBFit::CleanClassName($fatherNode);
+            $hierarchyNode['father_node'] = $fatherName;
+            /* Each node has an array of sub-problems names. */
+            /* These are stored when the sub-problem is being set, and not when the node is being set */
+            $this->hierarchy['hierarchyNodes'][$recursionLevel-1][$fatherName]['sub_problems'][] = $modelName;
+
+            $this->hierarchy['hierarchyNodes'][$recursionLevel][$fatherName][$modelName] = $hierarchyNode;
         }
     }
 
@@ -1523,7 +1596,7 @@ class DBFit
             $modelId = $model->saveToDB($idModelVersion, $recursionLevel, $fatherNode,
                                         $this->learner->getName(), $testData, $trainData);
             
-            $this->setHierarchyNode($model, $fatherNode, $modelId, $recursionPath);
+            $this->setHierarchyNode($model, $fatherNode, $modelId, $recursionLevel);
             //$model->dumpToDB($this->outputDB, $model_id);
             // . "_" . join("", array_map([$this, "getColumnName"], ...).);
 
@@ -1583,8 +1656,10 @@ class DBFit
             $this->updateModel($idModelVersion, $childPath);
         }
 
-        //if ($recursionPath === [])
-        //    print_r($this->hierarchy);
+        if ($recursionPath === []) {
+            //print_r($this->hierarchy);
+            ModelVersion::where('id', $idModelVersion)->update(['hierarchy' => json_encode($this->hierarchy)]);
+        }
     }
 
     /**
@@ -1649,14 +1724,13 @@ class DBFit
      */
     function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false, bool $timing = false) : array
     {
-        if ($timing) echo "Into predictByIdentifier\n";
-        //if ($timing)
-            $start = microtime(TRUE);
-        if ($timing) $tic = $start;
         /* The prediction is based on the problem associated with the model version. */
         $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
         $idProblem = $modelVersion->id_problem;
         $problem = Problem::where('id', $idProblem)->first();
+
+        /* To enhance performance: re-store hierarchy object */
+        $this->hierarchy = $modelVersion->hierarchy;
 
         if ($recursionPath == []) {
             /* Predict by identifier is called in a second moment, thus DBFit is just been created. */
@@ -1702,7 +1776,6 @@ class DBFit
 
         /* Read the dataframes specific to this recursion path. */
         $rawDataframe = $this->readData($idVal, $recursionPath, $numDataframes, true, true, $timing);
-        //dd($rawDataframe);
         if($timing) $tac = microtime(TRUE);
         if($timing) echo "after readData: " .  abs($tic - $tac) . "seconds.\n";
 
@@ -1877,8 +1950,18 @@ class DBFit
      */
     static protected function cleanClassName(string $className) : string
     {
-        preg_match("/(.*)_(.*)/", $className, $matches);
-        return $matches[2];
+        preg_match("/(.*)_(.*_.*)/", $className, $matches);
+        if (empty($matches)) {
+            preg_match("/(.*)_(.*)/", $className, $matches);
+            if (empty($matches)) {
+                return $className;
+            } else {
+                return $matches[2];
+            }
+            return $className;
+        } else {
+            return $matches[2];
+        }
     }
 
 
@@ -2394,54 +2477,22 @@ class DBFit
     /* TODO explain */
     function getModelName(array $recursionPath, ?int $i_prob, $short = false): string
     {
-        #echo "Recursion path in getModelName: " . PHP_EOL;
-        #print_r($recursionPath);
-        #if ($recursionPath === null) echo "null";
-
-        #$name_chunks = [];
-        /*foreach ($recursionPath as $recursionLevel => $node) {
-            #dd($recursionPath);
-            dd($this->getColumnAttributes($this->outputColumns[$recursionLevel],$node));
-            if (!$short) {
-                $name_chunks[] = str_replace(".", ">",
-                    $this->getColumnAttributes($this->outputColumns[$recursionLevel],
-                      array_slice($recursionPath,0, $recursionLevel))[$node[0]]->getName()) . "=" . $node[1];
-            } else {
-                $name_chunks[] = $node[0] . "=" . $node[1] . ",";
-            }
-        }*/
-        #$path_name = join("-", $name_chunks);
-        // var_dump($outAttrs);
-        // var_dump($recursionPath);
-        // var_dump(count($recursionPath));
-        // var_dump($outAttrs[count($recursionPath)]);
         $recursionLevel = count($recursionPath);
         if (!$short) {
             if ($i_prob !== NULL) {
-                #echo '$this->outputColumns[$recursionLevel]' . PHP_EOL;
-                #print_r($this->outputColumns[$recursionLevel]);# here is the problem
-                #echo "getColumnAttributes: " . PHP_EOL;
-                #print_r($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath));
-                #echo "i_prob: " . $i_prob . PHP_EOL; # debug
-                #echo "rec lev: " . $recursionLevel . PHP_EOL; #debug
                 $currentLevelStr = str_replace(".", ".",
                     $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName());
-                //$out = str_replace("/", ".", $path_name . "_" . $currentLevelStr);
                 $out = str_replace("/", ".", $currentLevelStr);
             } else {
-                #$out = str_replace("/", ".", $path_name);
                 $out = "";
             }
         } else {
             if ($i_prob !== NULL) {
-                #$out = $path_name . $i_prob;
               $out = strval($i_prob);
             } else {
-                #$out = $path_name;
                 $out = "";
             }
         }
-        #echo $out . PHP_EOL;
         return $out;
     }
 

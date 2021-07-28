@@ -540,4 +540,8 @@ class Utils
         //return preg_replace('/\s+/', '_', $newStr);
         return $newStr;
     }
+
+    public static function notNull($var) {
+        return ($var !== NULL);
+    }
 }
