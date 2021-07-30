@@ -1914,7 +1914,7 @@ class DBFit
                  * are the rules which haven't been activated.
                  * The full rule would be the activated rule plus the conjunction of the negated precious rules.
                  */
-                if ($rulesAntecedents = []) {
+                if (empty($rulesAntecedents)) {
                     $prediction['rules'] = [[]];
                 }
                 else {
