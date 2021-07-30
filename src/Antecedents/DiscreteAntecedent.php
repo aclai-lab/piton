@@ -189,7 +189,7 @@ class DiscreteAntecedent extends Antecedent
     function serializeToArray() : array
     {
         return [
-            #'feature_id' => $this->getAttribute()->getIndex(),
+            'feature_id' => $this->getAttribute()->getIndex(),
             'feature' => $this->attribute->getName(),
             'operator' => '==',
             'value' => $this->attribute->reprVal($this->getValue()),
@@ -237,6 +237,7 @@ class DiscreteAntecedent extends Antecedent
           $domain = null;
           foreach ($attributes as $attribute) {
             if ($attribute->getName() == $antecedentArray['feature']) {
+              $attribute->setIndex($antecedentArray['feature_id']);
               $domain = $attribute->getDomain();
               $out_map = array_flip($domain);
               $antecedent = new DiscreteAntecedent($attribute);
