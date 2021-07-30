@@ -1913,8 +1913,13 @@ class DBFit
                  * Only the last sub-array contains the activated rules, while the previous rules
                  * are the rules which haven't been activated.
                  * The full rule would be the activated rule plus the conjunction of the negated precious rules.
-                 */                
-                $prediction['rules'] = $rulesAntecedents;
+                 */
+                if ($rulesAntecedents = []) {
+                    $prediction['rules'] = [[]];
+                }
+                else {
+                    $prediction['rules'] = $rulesAntecedents;
+                }
                 $prediction['rule_stats'] = $ruleMeasures;
                 $prediction['subclasses'] = $this->predictByIdentifier(
                     $idVal,
