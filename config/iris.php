@@ -92,6 +92,8 @@ return [
   */
 
   'whereClauses' => [
+    'default' => [],
+    'onlyTraining' => []
   ],
 
   /*
