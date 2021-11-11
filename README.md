@@ -101,15 +101,13 @@ First, we have to publish its configuration file via:
 `php artisan vendor:publish --tag=prip-config`.
 
 You can now modify `config/prip.php` specifying the options you that prefer; for now, let's keep it as it is.
-We can now launch the command: `php artisan piton:update_models_with_interface` and, after entering the author id, specifying "Prip" as the chosen learner.
-
-You can also run `php artisan piton:update_models <author_id> PRip` if you prefer to pass this information by parameters (for example, in a script).
+We can now launch the command: `php artisan piton:update_models iris <author_id> PRip` which take as parameters the problem to be solved (i.e., the name of the configuration file withouth the .php extension, in this case iris), the author id, the chosen learner and eventually which specific algorithm of the learner (in this case we specify "Prip" as the chosen learner).
 
 This will create as many models as your class attributes (remember that categorical attributes will be forced to be binary, so an attribute with 3 different values will result in 3 separate class attributes, one for each value). In this case, it should create 3 models: one for "Species_setosa", one for "Species_versicolor" and one for "Species_virginica".
 
 We can now try to predict on these results launching: `php artisan piton:predict_by_identifier` and specifying an identifier.
 
-Suggestion: with the iris dataframe, we sugget using SKLearnLearner CART for accurate predictions. To do so, first publish the config file: `php artisan --tag=sklearn_cart.php` (remember, there's a config file for each "algorithm", only "PRip" has just one config file) and then run `php artisan piton:update_models <author_id> SKLearnLearner CART`.
+Suggestion: with the iris dataframe, we sugget using SKLearnLearner CART for accurate predictions. To do so, first publish the config file: `php artisan --tag=sklearn_cart.php` (remember, there's a config file for each "algorithm", only "PRip" has just one config file) and then run `php artisan piton:update_models  iris <author_id> SKLearnLearner CART`.
 
 # Dependencies
 
