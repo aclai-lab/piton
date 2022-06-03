@@ -10,6 +10,7 @@ use aclai\piton\Learners\PRip;
 use aclai\piton\Learners\SklearnLearner;
 use aclai\piton\Learners\WittgensteinLearner;
 use aclai\piton\ModelVersion;
+use aclai\piton\Problem;
 
 class UpdateModelsWithInterface extends Command
 {
@@ -34,10 +35,16 @@ class UpdateModelsWithInterface extends Command
    */
   public function handle(DBFit $db_fit)
   {
-    /* Checks if the piton config file has been published. */
-    if (Piton::configNotPublished()) {
-      return $this->warn('Please publish the piton config file by running ' . "\n"
-        . ' \'php artisan vendor:publish --tag=piton-config\'');
+    $problem = $this->ask('Please insert the problem name');
+
+    /* Check if the problem config file exists. */
+    if ($this->configNotPublished($problem)) {
+      return $this->warn(
+        'No config file found for problem ' . $problem . '.' . "\n" .
+        'Please publish the general problem config file by running ' . "\n" .
+        ' \'php artisan vendor:publish --tag=problem-config\'' . "\n" .
+        'and rename it with the name of your problem.'
+      );
     }
 
     /* Asks information about the author. */
@@ -153,25 +160,41 @@ class UpdateModelsWithInterface extends Command
         . 'Available learners are \'PRip\', \'WittgensteinLearner\' and \'SKLearnLearner\'');
     }
 
-    /* If the learner is not set, something went wrong, a warn has been printed and execution should finish. */
+    /**
+     * If the learner is not set at this time, something went wrong.
+     * A warn should already been printed and the execution should finish.
+     */
     if (isset($lr)) {
       /* Set DBFit options */
-      $db_fit->setTrainingMode(config('piton.trainingMode'));
-      $db_fit->setCutOffValue(config('piton.cutOffValue'));
+      $db_fit->setTrainingMode(config($problem.'.trainingMode'));
+      $db_fit->setCutOffValue(config($problem.'.cutOffValue'));
       $db_fit->setLearner($lr);
-      foreach (config('piton.defaultOptions') as $defaultOption) {
+      foreach (config($problem.'.defaultOptions') as $defaultOption) {
         $db_fit->setDefaultOption($defaultOption[0], $defaultOption[1]);
       }
-      $db_fit->setInputTables(config('piton.inputTables'));
-      $db_fit->setWhereClauses(config('piton.whereClauses'));
-      $db_fit->setOrderByClauses(config('piton.orderByClauses'));
-      $db_fit->setIdentifierColumnName(config('piton.identifierColumnName'));
-      $db_fit->setInputColumns(config('piton.inputColumns'));
-      $db_fit->setOutputColumns(config('piton.outputColumns'));
-      $db_fit->setGlobalNodeOrder(config('piton.globalNodeOrder'));
+      $db_fit->setInputTables(config($problem.'.inputTables'));
+      $db_fit->setWhereClauses(config($problem.'.whereClauses'));
+      $db_fit->setOrderByClauses(config($problem.'.orderByClauses'));
+      $db_fit->setIdentifierColumnName(config($problem.'.identifierColumnName'));
+      $db_fit->setInputColumns(config($problem.'.inputColumns'));
+      $db_fit->setOutputColumns(config($problem.'.outputColumns'));
+      $db_fit->setGlobalNodeOrder(config($problem.'.globalNodeOrder'));
+
+      /* Store information about the problem in the database. */
+      $problem = Problem::create([
+        'name' => $problem,
+        'inputTables' => json_encode($db_fit->getInputTables()),
+        'inputColumns' => json_encode($db_fit->getInputColumns()),
+        'outputColumns' => json_encode($db_fit->getOutputColumns()),
+        'whereClauses' => json_encode($db_fit->getWhereClauses()),
+        'OrderByClauses' => json_encode($db_fit->getOrderByClauses()),
+        'limit' => $db_fit->getLimit() ? json_encode($db_fit->getLimit()) : null,
+        'identifierColumnName' => $db_fit->getIdentifierColumnName()
+      ]);
 
       /* Instantiate modelVersion; most of the values will be updated by DBFit::updateModel. */
       $modelVersion = ModelVersion::create([
+        'id_problem' => $problem->id,
         'id_author' => $author,
         'learner' => isset($algorithm) ? $learner . "\t" . $algorithm : $learner,
         'training_mode' => '[' . implode(',', $db_fit->getTrainingMode()) . ']',
