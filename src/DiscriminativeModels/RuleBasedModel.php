@@ -80,8 +80,6 @@ class RuleBasedModel extends DiscriminativeModel
         /* Extract the data in the same form that was seen during training */
         $allTestData = clone $testData;
 
-        Utils::die_error($testData->toString());
-
         if ($this->attributes !== NULL) {
             // $allTestData->sortAttrsAs($this->attributes);
             #print_r($testData->getAttributes());

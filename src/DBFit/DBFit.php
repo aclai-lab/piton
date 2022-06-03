@@ -1904,6 +1904,10 @@ class DBFit
             /* Recursive step: recurse and predict the subtree of this predicted value */
             // TODO right now I'm not recurring when a "NO_" outcome happens. This is not supersafe, there must be a nice generalization.
             
+            // error_log($dataframe->numInstances());
+            // error_log($dataframe->toString());
+            // error_log($predictedStringVal);
+
             //Update: not if class name, but if value starts with no_
             if (!Utils::startsWith($predictedStringVal, "NO_")) {
             
@@ -1941,6 +1945,7 @@ class DBFit
                     $log,
                     $timing
                 );
+
                 $predictions[] = $prediction;
             }
         }

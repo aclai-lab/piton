@@ -22,7 +22,7 @@ class PredictByIdentifier extends Command
    *
    * @var string
    */
-  protected $signature = 'piton:predict_by_identifier';
+  protected $signature = 'piton:predict_by_identifier {idVal}';
 
   /**
    * The console command description.
@@ -38,7 +38,8 @@ class PredictByIdentifier extends Command
    */
   public function handle(DBFit $db_fit)
   {
-    $idVal = $this->ask('Instance on which predict');
+    $idVal = $this->argument('idVal');
+    // $idVal = $this->ask('Instance on which predict');
     /* Warn: this is just for trying stuff, because phpunit doesn't read config file and it's too big to replicate. */
     $db_fit = new DBFit();
     // Utils::die_error(Utils::get_var_dump(ModelVersion::orderByDesc('id')->count()));
