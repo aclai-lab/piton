@@ -1904,19 +1904,88 @@ class DBFit
             /*
              * Clean rules aggregation
              */
-            // $storedActivatedAntecedents = end($rulesAntecedents);
-            // $storedUnactivatedAntecedentsGrouped = array_slice($rulesAntecedents, 0, -1);
-            // $storedUnactivatedAntecedents = [];
-            // foreach($storedUnactivatedAntecedentsGrouped as $k=>$v) {
-            //     $storedUnactivatedAntecedents[$k] = $v;
-            // }
-            // // foreach ($storedRules as $sr => $storedRule) {
-            // //     TODO simplify constraints!!
-            // //     body mass index
-            // // }
+            $storedActivatedAntecedents = end($rulesAntecedents);
+            $storedUnactivatedAntecedentsGrouped = array_slice($rulesAntecedents, 0, -1);
+            // error_log(Utils::get_var_dump($storedUnactivatedAntecedentsGrouped));
+            $storedUnactivatedAntecedents = [];
+            foreach($storedUnactivatedAntecedentsGrouped as $g) {
+                foreach($g as $v) {
+                    $storedUnactivatedAntecedents[$v["feature"]][] = $v;
+                }
+            }
+            // error_log(Utils::get_var_dump($storedUnactivatedAntecedents));
+            $new_storedUnactivatedAntecedents = [];
+            foreach($storedUnactivatedAntecedents as $feature => $g) {
+                $storedUnactivatedAntecedents[$feature] = array_unique($g, SORT_REGULAR);
+                $by_operator = [];
+
+                error_log(Utils::get_var_dump($storedUnactivatedAntecedents[$feature]));
+                foreach($storedUnactivatedAntecedents[$feature] as $antecedent) {
+                    // Invert antecedente (remember it didn't activate)
+                    if ($antecedent["operator"] == " >= ") {
+                        $antecedent["operator"] = " < ";
+                    } else if ($antecedent["operator"] == " > ") {
+                        $antecedent["operator"] = " <= ";
+                    }else if ($antecedent["operator"] == " <= ") {
+                        $antecedent["operator"] = " > ";
+                    }else if ($antecedent["operator"] == " < ") {
+                        $antecedent["operator"] = " >= ";
+                    }else if ($antecedent["operator"] == " == ") {
+                        $antecedent["operator"] = " != ";
+                    }else if ($antecedent["operator"] == " != ") {
+                        $antecedent["operator"] = " == ";
+                    }
+                    $by_operator[$antecedent["operator"]][] = $antecedent;
+                }
+                error_log(Utils::get_var_dump($by_operator));
+
+                $new_antecedents = [];
+                foreach($by_operator as $operator => $antecedents) {
+                    $new_antecedents = array_merge($new_antecedents,
+                            array_reduce($antecedents, function ($carry, $item) use ($operator) {
+                            if (count($carry) == 0) {
+                                return [$item];
+                            } else if (in_array($operator, [" >= ", " > "])) {
+                                $new_item = $item;
+                                // error_log(Utils::get_var_dump($carry[0]));
+                                $new_item["value"] = max($carry[0]["value"], $item["value"]);
+                                return [$new_item];
+                            } else if (in_array($operator, [" <= ", " < "])) {
+                                $new_item = $item;
+                                // error_log(Utils::get_var_dump($carry[0]));
+                                $new_item["value"] = min($carry[0]["value"], $item["value"]);
+                                return [$new_item];
+                            } else if (in_array($operator, [" == "])) { # Shouldn't happen
+                                // $new_item = $item;
+                                // $new_item["operator"] = " in ";
+                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                                return [$new_item];
+                            } else if (in_array($operator, [" != "])) { # Shouldn't happen
+                                // $new_item = $item;
+                                // $new_item["operator"] = " not in ";
+                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                                // $array_push = $carry[0]["value"];
+                                // $new_item["value"] = [, $item["value"]];
+                                array_push($carry, $item);
+                                return $carry;
+                            } else {
+                                Utils::die_error("Uncaught operator value: " . Utils::get_var_dump($operator));
+                                return [];
+                            }
+                        }, [])
+                    );
+                }
+                // foreach($new_antecedents as $operator => $antecedents) {
+                // }
+                $new_storedUnactivatedAntecedents = array_merge($new_storedUnactivatedAntecedents, $new_antecedents);
+            }
             // $rulesAntecedents = [];
             // $rulesAntecedents[] = $storedUnactivatedAntecedents;
-            // $rulesAntecedents[] = $storedActivatedAntecedents;
+            $rulesAntecedents = $new_storedUnactivatedAntecedents;
+            if (count($storedActivatedAntecedents) > 0) {
+                $rulesAntecedents = array_merge($rulesAntecedents, $rulesAntecedents);
+            }
 
             /* String associated with predicted value */
             $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
