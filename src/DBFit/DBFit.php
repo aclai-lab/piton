@@ -401,6 +401,7 @@ class DBFit
             $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
             if ($outputAttributes === null) {
                 if ($recursionLevel === 0) {
+                    // echo $outputAttributes;
                     foreach ($outputAttributes as $oa)
                         $this->hierarchy['outputAttributes'][$recursionLevel][] = $oa->serializeToArray();
                 }
@@ -1727,11 +1728,21 @@ class DBFit
     function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false, bool $timing = false) : array
     {
         /* The prediction is based on the problem associated with the model version. */
-        $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
+        $q = ModelVersion::where('id', $idModelVersion);
+        // Utils::die_error(Utils::get_var_dump($q->count()));
+        if ($q->count() == 0) {
+            return [];
+        }
+
+        $modelVersion = $q->first();
         $idProblem = $modelVersion->id_problem;
         $problem = Problem::where('id', $idProblem)->first();
 
         /* To enhance performance: re-store hierarchy object */
+        if ($modelVersion->hierarchy === NULL) {
+            Utils::die_error("modelVersion's hierarchy is NULL. This is likely due to an unfinished learning process.");
+        }
+
         $this->hierarchy = $modelVersion->hierarchy;
 
         if ($recursionPath == []) {

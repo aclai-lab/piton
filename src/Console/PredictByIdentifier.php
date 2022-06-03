@@ -13,6 +13,7 @@ use aclai\piton\Learners\PRip;
 use aclai\piton\Learners\SklearnLearner;
 use aclai\piton\Learners\WittgensteinLearner;
 use aclai\piton\ModelVersion;
+use aclai\piton\Facades\Utils;
 
 class PredictByIdentifier extends Command
 {
@@ -40,6 +41,7 @@ class PredictByIdentifier extends Command
     $idVal = $this->ask('Instance on which predict');
     /* Warn: this is just for trying stuff, because phpunit doesn't read config file and it's too big to replicate. */
     $db_fit = new DBFit();
+    // Utils::die_error(Utils::get_var_dump(ModelVersion::orderByDesc('id')->count()));
     $modelVersion = ModelVersion::orderByDesc('id')->first(); # Get most recent version
     $predictions = $db_fit->predictByIdentifier($idVal,[],$modelVersion->id, false, false);
     //dd("It worked");
