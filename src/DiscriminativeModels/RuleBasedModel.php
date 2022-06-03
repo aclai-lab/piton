@@ -138,7 +138,8 @@ class RuleBasedModel extends DiscriminativeModel
                          * which covers the instance.
                          */
                         if (!$this->getIsNormalized()) {
-                            $storedRules[$instance_id][] = $rule;
+                            $coverage = $rule->coverage($allTestData, $instance_id);
+                            $storedRules[$instance_id][] = $rule->getNonCoveringSubRule($allTestData, $instance_id, $coverage);
                         }
                     }
                 }
