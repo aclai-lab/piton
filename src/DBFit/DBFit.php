@@ -1909,18 +1909,7 @@ class DBFit
             // error_log(Utils::get_var_dump($storedUnactivatedAntecedentsGrouped));
             $storedUnactivatedAntecedents = [];
             foreach($storedUnactivatedAntecedentsGrouped as $g) {
-                foreach($g as $v) {
-                    $storedUnactivatedAntecedents[$v["feature"]][] = $v;
-                }
-            }
-            // error_log(Utils::get_var_dump($storedUnactivatedAntecedents));
-            $new_storedUnactivatedAntecedents = [];
-            foreach($storedUnactivatedAntecedents as $feature => $g) {
-                $storedUnactivatedAntecedents[$feature] = array_unique($g, SORT_REGULAR);
-                $by_operator = [];
-
-                error_log(Utils::get_var_dump($storedUnactivatedAntecedents[$feature]));
-                foreach($storedUnactivatedAntecedents[$feature] as $antecedent) {
+                foreach($g as $antecedent) {
                     // Invert antecedente (remember it didn't activate)
                     if ($antecedent["operator"] == " >= ") {
                         $antecedent["operator"] = " < ";
@@ -1935,6 +1924,24 @@ class DBFit
                     }else if ($antecedent["operator"] == " != ") {
                         $antecedent["operator"] = " == ";
                     }
+                    $storedUnactivatedAntecedents[] = $antecedent;
+                }
+            }
+
+            $rulesAntecedents = array_merge($storedUnactivatedAntecedents, $storedActivatedAntecedents);
+            $rulesAntecedents = array_unique($rulesAntecedents, SORT_REGULAR);
+            $by_feature = [];
+
+            foreach($rulesAntecedents as $feature => $antecedent) {
+                $by_feature[$antecedent["feature"]][] = $antecedent;
+            }
+
+            // error_log(Utils::get_var_dump($storedUnactivatedAntecedents));
+            $new_rulesAntecedents = [];
+            foreach($by_feature as $feature => $antecedents) {
+                error_log(Utils::get_var_dump($antecedents));
+                $by_operator = [];
+                foreach($antecedents as $antecedent) {
                     $by_operator[$antecedent["operator"]][] = $antecedent;
                 }
                 error_log(Utils::get_var_dump($by_operator));
@@ -1978,15 +1985,9 @@ class DBFit
                 }
                 // foreach($new_antecedents as $operator => $antecedents) {
                 // }
-                $new_storedUnactivatedAntecedents = array_merge($new_storedUnactivatedAntecedents, $new_antecedents);
+                $new_rulesAntecedents = array_merge($new_rulesAntecedents, $new_antecedents);
             }
-            // $rulesAntecedents = [];
-            // $rulesAntecedents[] = $storedUnactivatedAntecedents;
-            $rulesAntecedents = $new_storedUnactivatedAntecedents;
-            if (count($storedActivatedAntecedents) > 0) {
-                $rulesAntecedents = array_merge($rulesAntecedents, $rulesAntecedents);
-            }
-            $rulesAntecedents = [$rulesAntecedents];
+            $rulesAntecedents = $new_rulesAntecedents;
 
             /* String associated with predicted value */
             $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
