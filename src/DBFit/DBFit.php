@@ -1923,16 +1923,16 @@ class DBFit
                 foreach($storedUnactivatedAntecedents[$feature] as $antecedent) {
                     // Invert antecedente (remember it didn't activate)
                     if ($antecedent["operator"] == " >= ") {
-                        $antecedent["operator"] = " < ";
-                    } else if ($antecedent["operator"] == " >= ") {
+                        $antecedent["operator"] = " <= ";
+                    } else if ($antecedent["operator"] == " > ") {
                         $antecedent["operator"] = " <= ";
                     }else if ($antecedent["operator"] == " <= ") {
-                        $antecedent["operator"] = " > ";
-                    }else if ($antecedent["operator"] == " <= ") {
+                        $antecedent["operator"] = " >= ";
+                    }else if ($antecedent["operator"] == " < ") {
                         $antecedent["operator"] = " >= ";
                     }else if ($antecedent["operator"] == " == ") {
-                        $antecedent["operator"] = " != ";
-                    }else if ($antecedent["operator"] == " == ") {
+                        $antecedent["operator"] = " == ";
+                    }else if ($antecedent["operator"] == " != ") {
                         $antecedent["operator"] = " == ";
                     }
                     $by_operator[$antecedent["operator"]][] = $antecedent;
