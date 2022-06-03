@@ -1932,7 +1932,7 @@ class DBFit
                         $antecedent["operator"] = " >= ";
                     }else if ($antecedent["operator"] == " == ") {
                         $antecedent["operator"] = " != ";
-                    }else if ($antecedent["operator"] == " != ") {
+                    }else if ($antecedent["operator"] == " == ") {
                         $antecedent["operator"] = " == ";
                     }
                     $by_operator[$antecedent["operator"]][] = $antecedent;
