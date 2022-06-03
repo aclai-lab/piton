@@ -29,7 +29,7 @@ And in the terminal, run the following command:
 composer update
 ```
 
-### Note: for *dev* installation, it is actually more convenient to clone this repo in a directory, and tell composer.json to use that distribution, before running `composer update`:
+### Note: for *dev* installation, it is actually more convenient to clone this repo, and tell composer.json to use the cloned repo before running `composer update`:
 
 ```json
 "repositories": [
