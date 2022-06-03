@@ -24,7 +24,7 @@ class CreatePitonModelVersionTable extends Migration
 				/* ID of the model_version and therefore of the hierarchy of problems. */
 				$table->increments('id');
 				/* ID of the associated problem. */
-        		$table->integer('id_problem');
+				$table->integer('id_problem');
 				/* ID of the author who created the model_version. */
 				/* TODO doesn't this have to be in model? What if an author modifies a model? */
 				$table->integer('id_author')->nullable()->default(null);
@@ -40,8 +40,8 @@ class CreatePitonModelVersionTable extends Migration
 				/* Timestamp of the creation of the model_version. */
 				/* TODO can't I just use created_at? */
 				$table->date('date');
-        /* Information about the hierarchy of problems. */
-        $table->json('hierarchy')->nullable()->default(null);
+				/* Information about the hierarchy of problems. */
+				$table->json('hierarchy')->nullable()->default(null);
 				/* TODO what columns for test results? The following line is temporary. */
 				$table->text('test_results')->nullable();
 				/* TODO difference between date and test date? Furthermore, I already have created_at.*/

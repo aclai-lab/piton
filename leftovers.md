@@ -1,9 +1,0 @@
-- Creation of "dead nodes" in the hierarchy in case a model isn't trained for a specific sub-problem, and of the "I couldn't predict" case in predictByIdentifier.
-- Use CheckCutOff to also check the number of the instances (atm it only check for the proportion yes/no). Furthermore, find a better name for CutOffValue.
-- Divide DBFit into 3 classes: fetcher, fitter and predicter.
-- "Fulltraining" training mode.
-- Add to each model only the attributes associated with its rules insted of all the attributes used for training.
-- Update the storage of rules into the piton_rules table in the database.
-- Revise the rules_json_logic field into the piton_class_models table and how to store in it.
-- Print all errors messages into a Laravel log file instead of the terminal.
-- Print clear error messages in case of errors in the configuration.

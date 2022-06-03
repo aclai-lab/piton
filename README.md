@@ -17,7 +17,7 @@ Add this github project as a repository in composer.json:
 
 Add the package in require section:
 
-```
+```json
 "require": {
 	"aclai/piton": "master"
 }
@@ -29,10 +29,27 @@ And in the terminal, run the following command:
 composer update
 ```
 
+### Note: for *dev* installation, it is actually more convenient to clone this repo in a directory, and tell composer.json to use that distribution, before running `composer update`:
+
+```json
+"repositories": [
+	{
+		"type": "path",
+		"url": "{PATH of piton repo}"
+	}
+],
+
+...
+
+"require": {
+	"aclai/piton": "dev"
+}
+```
+
 ### Config a PITON database
 
 piton is meant to be completely separated from your project, and to save all it's data, especially models, to another database, so a new connection is required.
-To do so, you have to add a new connection in the 'connections' array of your `config/database.php` file. If you're using mysql, you can use the following stub.
+To do so, you have to add a new connection in the 'connections' array of your `config/database.php` file. If you're using MySQL, you can use the following stub.
 ```json
 'piton_connection' => [
             'driver' => env('DB_CONNECTION_PITON'),
@@ -63,7 +80,7 @@ DB_PASSWORD_PITON=<your_mysql_password>
 
 (Other stubs will be add in the future for full support).
 
-At the moment, only mySQL is tested and supported.
+At the moment, only MySQL is tested and supported.
 
 
 ### Migrate Database
@@ -80,7 +97,7 @@ Up next, you need to publish the package's config file that includes some defaul
 
 You will now find the config file located in `/config/problem.php`
 
-There, you can specify how to build the object of type Instances (basically, a table with metadata) on which you can create rule based models.
+There, you can specify how to build the object of type Instances (basically, a table with metadata) on which you can create rule-based models.
 
 # A simple example
 If you want to try the package right away, you can run the following command:

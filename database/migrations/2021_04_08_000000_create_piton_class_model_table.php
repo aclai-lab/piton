@@ -33,10 +33,10 @@ class CreatePitonClassModelTable extends Migration
 				$table->json('class');
 				/* The rules of the rule based model and relative testing values. */
 				$table->json('rules');
-        /* The rules of the rule based model in json logic format. */
-        $table->json('json_logic_rules');
-        /* The model attributes. */
-        $table->json('attributes')->nullable()->default(null);
+				/* The rules of the rule based model in json logic format. */
+				$table->json('json_logic_rules');
+				/* The model attributes. */
+				$table->json('attributes')->nullable()->default(null);
 				/* Test results */
 				$table->integer('totNumRules');
 				$table->integer('numRulesRA')->nullable()->default(null);
@@ -80,11 +80,11 @@ class CreatePitonClassModelTable extends Migration
 				$table->decimal('specificity', 10, 2)->nullable()->default(null);
 				$table->decimal('PPV', 10, 2)->nullable()->default(null);
 				$table->decimal('NPV', 10, 2)->nullable()->default(null);
-        /* Timestamp on when the testing occurred. */
-        /* TODO do I really need this? Isn't it equal to created_at? */
-        $table->date('test_date');
-				/* Additional infos, such as the IDs of the instances used for training and testing. */
-        $table->json('additional_infos')->nullable()->default(null);
+				/* Timestamp on when the testing occurred. */
+				/* TODO do I really need this? Isn't it equal to created_at? */
+				$table->date('test_date');
+						/* Additional infos, such as the IDs of the instances used for training and testing. */
+				$table->json('additional_infos')->nullable()->default(null);
 				/* Standards. */
 				$table->timestamps();
 				$table->index('created_at');

@@ -1030,8 +1030,11 @@ class DBFit
             /* Query database */
             // echo $sql . PHP_EOL;
             // die();
-            $raw_data = DB::select(DB::raw($sql));
+            // if (!$silent) {
+            //     echo "SQL:" . PHP_EOL . $sql . PHP_EOL;
+            // }
             //$raw_data = mysql_select($this->inputDB, $sql, $silent);
+            $raw_data = DB::select(DB::raw($sql));
             return $raw_data;
         }
     }
