@@ -1886,17 +1886,37 @@ class DBFit
             /**
              * I want the antecedents to have a more similar format to the json one in the database.
              * Remember: just the last array of antecedents, in fact, contains the activated rule.
-             * But for not normalized models, we want to keep track of the rules encountered before
+             * But for un-normalized models, we want to keep track of the rules encountered before
              * its activation which haven't been activated.
              */
             $rulesAntecedents = [];
             foreach ($storedRules as $sr => $storedRule) {
+                $rulesAntecedents[$sr] = [];
                 /* I actually just need to store the antecedents. */
                 $ruleAntecedents = $storedRule->getAntecedents();
+                // error_log(Utils::get_var_dump($ruleAntecedents));
                 foreach ($ruleAntecedents as $ra => $ruleAntecedent) {
                     $rulesAntecedents[$sr][$ra] =  $ruleAntecedent->serializeToArray();
                 }
+                // error_log(Utils::get_var_dump($rulesAntecedents));
             }
+
+            /*
+             * Clean rules aggregation
+             */
+            // $storedActivatedAntecedents = end($rulesAntecedents);
+            // $storedUnactivatedAntecedentsGrouped = array_slice($rulesAntecedents, 0, -1);
+            // $storedUnactivatedAntecedents = [];
+            // foreach($storedUnactivatedAntecedentsGrouped as $k=>$v) {
+            //     $storedUnactivatedAntecedents[$k] = $v;
+            // }
+            // // foreach ($storedRules as $sr => $storedRule) {
+            // //     TODO simplify constraints!!
+            // //     body mass index
+            // // }
+            // $rulesAntecedents = [];
+            // $rulesAntecedents[] = $storedUnactivatedAntecedents;
+            // $rulesAntecedents[] = $storedActivatedAntecedents;
 
             /* String associated with predicted value */
             $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
@@ -1906,7 +1926,7 @@ class DBFit
             
             // error_log($dataframe->numInstances());
             // error_log($dataframe->toString());
-            // error_log($predictedStringVal);
+            // error_log($model);
 
             //Update: not if class name, but if value starts with no_
             if (!Utils::startsWith($predictedStringVal, "NO_")) {

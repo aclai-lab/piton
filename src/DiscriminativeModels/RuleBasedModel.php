@@ -112,6 +112,9 @@ class RuleBasedModel extends DiscriminativeModel
 
                 #echo "Instance: " . $allTestData->inst_toString($instance_id, false) . PHP_EOL; #debug
                 foreach ($this->rules as $r => $rule) {
+                    // error_log($rule->toString());
+                    // error_log(Utils::get_var_dump($rule->covers($allTestData, $instance_id)));
+                    // error_log("");
                     if ($rule->covers($allTestData, $instance_id)) {
                         $idx = $rule->getConsequent();
                         if ($rulesAffRilThresholds !== NULL) {
@@ -139,6 +142,8 @@ class RuleBasedModel extends DiscriminativeModel
                         }
                     }
                 }
+                // error_log(Utils::get_var_dump($storedRules[$instance_id]));
+
                 $predictions[$instance_id]    = $prediction;
                 if ($rule->covers($allTestData, $instance_id) && $rulesAffRilThresholds !== NULL) {
                     $rule_types[$instance_id] = $rule_type;
