@@ -1939,7 +1939,6 @@ class DBFit
             // error_log(Utils::get_var_dump($storedUnactivatedAntecedents));
             $new_rulesAntecedents = [];
             foreach($by_feature as $feature => $antecedents) {
-                error_log(Utils::get_var_dump($antecedents));
                 $by_operator = [];
                 foreach($antecedents as $antecedent) {
                     $by_operator[$antecedent["operator"]][] = $antecedent;
