@@ -42,7 +42,7 @@ composer update
 ...
 
 "require": {
-	"aclai/piton": "dev"
+	"aclai/piton": "dev-master"
 }
 ```
 
