@@ -795,7 +795,7 @@ class DBFit
                                     $format = $type_to_format[$this->getColumnMySQLType($column)];
                                     $date = DateTime::createFromFormat($format, $raw_val);
                                     if ($date === false) {
-                                        Utils::warn("Incorrect date string \"$raw_val\" (expected format: \"$format\")");
+                                        // Utils::warn("Incorrect date string \"$raw_val\" (expected format: \"$format\")");
                                         $val = NULL;
                                     } else {
                                         switch ($this->getColumnTreatmentType($column)) {
@@ -1374,8 +1374,7 @@ class DBFit
                             // var_dump($word_counts);
 
                             if (!count($word_counts)) {
-                                Utils::warn("Couldn't derive a BinaryBagOfWords dictionary for column \"" .
-                                    $this->getColumnName($column) . "\". This column will be ignored.");
+                                // Utils::warn("Couldn't derive a BinaryBagOfWords dictionary for column \"" . $this->getColumnName($column) . "\". This column will be ignored.");
 
                                 $attributes = NULL;
                             } else {
@@ -1391,11 +1390,9 @@ class DBFit
                                 }
                                 // var_dump($dict);
 
-                                if (count($dict) < $k) {
-                                    Utils::warn("Couldn't derive a BinaryBagOfWords dictionary of size $k for column \""
-                                        . $this->getColumnName($column) . "\". Dictionary of size "
-                                        . count($dict) . " will be used.");
-                                }
+                                // if (count($dict) < $k) {
+                                //     Utils::warn("Couldn't derive a BinaryBagOfWords dictionary of size $k for column \"" . $this->getColumnName($column) . "\". Dictionary of size " . count($dict) . " will be used.");
+                                // }
                                 $attributes = $generateDictAttrs($dict);
                             }
                         } else if ($arg === NULL) {
@@ -2232,7 +2229,7 @@ class DBFit
     {
         if ($columns === "*") {
             /* Use all available columns */
-            Utils::warn("Warning! Using all available columns. Please double check that this is the desired choice.");
+            // Utils::warn("Warning! Using all available columns. Please double check that this is the desired choice.");
             return $this->setInputColumns($this->getAvailableColumns());
         } else {
             Utils::listify($columns);
@@ -2397,7 +2394,7 @@ class DBFit
         for ($i_col = count($this->inputColumns) - 1; $i_col >= 0; $i_col--) {
             $col = $this->inputColumns[$i_col];
             if ($new_col["name"] == $this->getColumnName($col)) {
-                Utils::warn("Found output column '" . $new_col["name"] . "' in input columns. Removing...");
+                // Utils::warn("Found output column '" . $new_col["name"] . "' in input columns. Removing...");
                 array_splice($this->inputColumns, $i_col, 1);
                 // die_error("Output column '" . $new_col["name"] .
                 //   "' cannot also belong to inputColumns."
@@ -2793,16 +2790,13 @@ class DBFit
         $x = array_search($a, $this->globalNodeOrder);
         $y = array_search($b, $this->globalNodeOrder);
         if ($x === false && $y === false) {
-            Utils::warn("Nodes not found in globalNodeOrder array: " . PHP_EOL . Utils::get_var_dump($a) . PHP_EOL
-                . Utils::get_var_dump($b) . PHP_EOL . Utils::get_var_dump($this->globalNodeOrder));
+            // Utils::warn("Nodes not found in globalNodeOrder array: " . PHP_EOL . Utils::get_var_dump($a) . PHP_EOL . "Please add the value to the globalNodeOrder parameter!" . PHP_EOL . Utils::get_var_dump($b) . PHP_EOL . Utils::get_var_dump($this->globalNodeOrder));
             return 0;
         } else if ($x === false) {
-            Utils::warn("Node not found in globalNodeOrder array: " . PHP_EOL . Utils::get_var_dump($a) . PHP_EOL
-                . Utils::get_var_dump($this->globalNodeOrder));
+            // Utils::warn("Node not found in globalNodeOrder array: " . PHP_EOL . Utils::get_var_dump($a) . PHP_EOL . "Please add the value to the globalNodeOrder parameter!" . PHP_EOL . Utils::get_var_dump($this->globalNodeOrder));
             return 1;
         } else if ($y === false) {
-            Utils::warn("Node not found in globalNodeOrder array: " . PHP_EOL . Utils::get_var_dump($b) . PHP_EOL
-                . Utils::get_var_dump($this->globalNodeOrder));
+            // Utils::warn("Node not found in globalNodeOrder array: " . PHP_EOL . Utils::get_var_dump($b) . PHP_EOL . "Please add the value to the globalNodeOrder parameter!" . PHP_EOL . Utils::get_var_dump($this->globalNodeOrder));
             return -1;
         }
         return $x - $y;
