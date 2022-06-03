@@ -1924,11 +1924,11 @@ class DBFit
                     // Invert antecedente (remember it didn't activate)
                     if ($antecedent["operator"] == " >= ") {
                         $antecedent["operator"] = " < ";
-                    } else if ($antecedent["operator"] == " > ") {
+                    } else if ($antecedent["operator"] == " >= ") {
                         $antecedent["operator"] = " <= ";
                     }else if ($antecedent["operator"] == " <= ") {
                         $antecedent["operator"] = " > ";
-                    }else if ($antecedent["operator"] == " < ") {
+                    }else if ($antecedent["operator"] == " <= ") {
                         $antecedent["operator"] = " >= ";
                     }else if ($antecedent["operator"] == " == ") {
                         $antecedent["operator"] = " != ";
