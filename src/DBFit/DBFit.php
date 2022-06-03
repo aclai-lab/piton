@@ -399,13 +399,15 @@ class DBFit
         /* Obtaining attributes and assigning columns to attributes */
         if ($idVal === NULL) {
             $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
-            if ($recursionLevel === 0) {
-                foreach ($outputAttributes as $oa)
-                    $this->hierarchy['outputAttributes'][0][] = $oa->serializeToArray();
-            }
-            else {
-                foreach ($outputAttributes as $oa)
-                    $this->hierarchy['outputAttributes'][$recursionLevel][$recursionPath[0][1]][] = $oa->serializeToArray();
+            if ($outputAttributes === null) {
+                if ($recursionLevel === 0) {
+                    foreach ($outputAttributes as $oa)
+                        $this->hierarchy['outputAttributes'][$recursionLevel][] = $oa->serializeToArray();
+                }
+                else {
+                    foreach ($outputAttributes as $oa)
+                        $this->hierarchy['outputAttributes'][$recursionLevel][$recursionPath[0][1]][] = $oa->serializeToArray();
+                }
             }
         }
         else {
