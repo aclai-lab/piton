@@ -1923,15 +1923,15 @@ class DBFit
                 foreach($storedUnactivatedAntecedents[$feature] as $antecedent) {
                     // Invert antecedente (remember it didn't activate)
                     if ($antecedent["operator"] == " >= ") {
-                        $antecedent["operator"] = " <= ";
+                        $antecedent["operator"] = " < ";
                     } else if ($antecedent["operator"] == " > ") {
                         $antecedent["operator"] = " <= ";
                     }else if ($antecedent["operator"] == " <= ") {
-                        $antecedent["operator"] = " >= ";
+                        $antecedent["operator"] = " > ";
                     }else if ($antecedent["operator"] == " < ") {
                         $antecedent["operator"] = " >= ";
                     }else if ($antecedent["operator"] == " == ") {
-                        $antecedent["operator"] = " == ";
+                        $antecedent["operator"] = " != ";
                     }else if ($antecedent["operator"] == " != ") {
                         $antecedent["operator"] = " == ";
                     }
@@ -1986,6 +1986,7 @@ class DBFit
             if (count($storedActivatedAntecedents) > 0) {
                 $rulesAntecedents = array_merge($rulesAntecedents, $rulesAntecedents);
             }
+            $rulesAntecedents = [$rulesAntecedents];
 
             /* String associated with predicted value */
             $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
