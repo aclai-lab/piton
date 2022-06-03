@@ -1987,6 +1987,7 @@ class DBFit
                 $new_rulesAntecedents = array_merge($new_rulesAntecedents, $new_antecedents);
             }
             $rulesAntecedents = $new_rulesAntecedents;
+            $rulesAntecedents = [$rulesAntecedents];
 
             /* String associated with predicted value */
             $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
