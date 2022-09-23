@@ -399,9 +399,9 @@ class DBFit
         /* Obtaining attributes and assigning columns to attributes */
         if ($idVal === NULL) {
             $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
-            if ($outputAttributes === null) {
+            if ($outputAttributes !== null) {
                 if ($recursionLevel === 0) {
-                    // echo $outputAttributes;
+                    // print_r($outputAttributes);
                     foreach ($outputAttributes as $oa)
                         $this->hierarchy['outputAttributes'][$recursionLevel][] = $oa->serializeToArray();
                 }
@@ -415,7 +415,7 @@ class DBFit
             //$this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
 
             $outputAttributes = [];
-            print_r($this->hierarchy);
+            // print_r($this->hierarchy);
             if ($recursionLevel === 0) {
                 foreach ($this->hierarchy['outputAttributes'][$recursionLevel] as $oa) {
                     $outputAttributes[] = Attribute::createFromArray($oa);
