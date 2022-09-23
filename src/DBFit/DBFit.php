@@ -415,6 +415,7 @@ class DBFit
             //$this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
 
             $outputAttributes = [];
+            print_r($this->hierarchy);
             if ($recursionLevel === 0) {
                 foreach ($this->hierarchy['outputAttributes'][$recursionLevel] as $oa) {
                     $outputAttributes[] = Attribute::createFromArray($oa);
@@ -1033,9 +1034,9 @@ class DBFit
             /* Query database */
             // echo $sql . PHP_EOL;
             // die();
-            // if (!$silent) {
-            //     echo "SQL:" . PHP_EOL . $sql . PHP_EOL;
-            // }
+            if (!$silent) {
+                echo "SQL:" . PHP_EOL . $sql . PHP_EOL;
+            }
             //$raw_data = mysql_select($this->inputDB, $sql, $silent);
             $raw_data = DB::select(DB::raw($sql));
             return $raw_data;
@@ -1547,7 +1548,7 @@ class DBFit
                 continue;
             }
 
-            //$dataframe->saveToCSV("datasets/data-" . $this->getModelName($recursionPath, $i_prob) . ".csv");
+            // $dataframe->saveToCSV("datasets/data-" . $this->getModelName($recursionPath, $i_prob) . ".csv");
             //$dataframe->save_ARFF("datasets/arff/data-" . $this->getModelName($recursionPath, $i_prob) . ".arff");
             //$dataframe->saveToDB($this->getTableNickname("data-" . $this->getModelName($recursionPath, $i_prob)));
 
