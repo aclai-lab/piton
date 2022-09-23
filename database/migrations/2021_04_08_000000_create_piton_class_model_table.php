@@ -81,7 +81,7 @@ class CreatePitonClassModelTable extends Migration
 				$table->decimal('PPV', 10, 2)->nullable()->default(null);
 				$table->decimal('NPV', 10, 2)->nullable()->default(null);
 				/* Timestamp on when the testing occurred. */
-				/* TODO do I really need this? Isn't it equal to created_at? */
+				/* TODO remove this column */
 				$table->date('test_date');
 						/* Additional infos, such as the IDs of the instances used for training and testing. */
 				$table->json('additional_infos')->nullable()->default(null);

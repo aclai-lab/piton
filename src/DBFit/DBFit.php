@@ -174,10 +174,12 @@ class DBFit
     private $limit;
 
     /* An identifier column, used for
-      - sql-based prediction
+      - SQL-based prediction
       - a correct retrieval step of prediction results
       Furthermore, a value for the identifier column identifies a set of data rows that are to be
-        compressed into a single data instance before use. TODO explain better this important point.
+        compressed into a single data instance before use; rows with the same value for the
+        identifierColumnName are squashed into a single line, so that the identifierColumnName
+        effectively induces a dataset of rows that have different values for identifierColumnName.
     */
     private $identifierColumnName;
 

@@ -169,7 +169,6 @@ class Fetcher
    * - a correct retrieval step of prediction results
    * Furthermore, a value for the identifier column identifies a set of data rows that are to be
    * compressed into a single data instance before use.
-   * TODO explain better this important point.
    */
   private $identifierColumnName;
   
