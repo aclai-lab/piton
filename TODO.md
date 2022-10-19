@@ -1,10 +1,14 @@
 - Separate DBFit into 3 classes: fetcher, fitter and predicter.
+- Associare ai modelli SOLO gli attributi associati alle regole e non tutti gli attributi su cui è stato effettuato il training. L’obiettivo è che se, ad esempio, per un’istanza l’attributo BMI = NULL, ma non ho regole per BMI associate a quel modello, posso comunque effettuare una predizione. Ancora meglio, si potrebbe trovare un modo per attivare comunque la regola se, ad esempio, BMI è presente a partire dalla N-esima regola ma non è presente fra le prime, e quindi associadno gli attributi addirittura alle regole stesse invece che non ai modelli.
+- Trovare un modo per stampare dei messaggi di errore chiari in caso di config sbagliata. Si è tentato di farlo durante tutto lo sviluppo, ma pul certamente essere migliorato. Mantenere questa cosa anche in caso di nuovi parametri, e valutare se ciò che è presente al momento è sufficiente.
+- Update the storage of rules into the piton_rules table in the database.
+- Rename 'update_models' into 'learn_problem'
+
 
 - Fix those == that should actually be === https://stackoverflow.com/questions/12151997/why-does-1234-1234-test-evaluate-to-true#comment16259587_12151997
 - Make sql querying secure with addslashes or whatever
 
 - Parallelize code ( https://medium.com/@rossbulat/true-php7-multi-threading-how-to-rebuild-php-and-use-pthreads-bed4243c0561 )
-- Update the storage of rules into the piton_rules table in the database.
 - Code is probably not ready for weighted datasets (e.g., see pushInstance)
 
 - Add to each model only the attributes associated with its rules insted of all the attributes used for training.

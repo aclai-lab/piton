@@ -236,8 +236,8 @@ class DBFit
      * - attributes used at training time
      * 
      * It is formed by two parts:
-     *  - ['outputAttributes'] containing the output attributes associated with the hierarchy
-     *  - ['hierarchyNodes'] contatining the nodes of the hierarchy
+     *  - ["outputAttributes"] containing the output attributes associated with the hierarchy
+     *  - ["hierarchyNodes"] contatining the nodes of the hierarchy
      */
     private $hierarchy;
 
@@ -403,11 +403,11 @@ class DBFit
                 if ($recursionLevel === 0) {
                     // echo $outputAttributes;
                     foreach ($outputAttributes as $oa)
-                        $this->hierarchy['outputAttributes'][$recursionLevel][] = $oa->serializeToArray();
+                        $this->hierarchy["outputAttributes"][$recursionLevel][] = $oa->serializeToArray();
                 }
                 else {
                     foreach ($outputAttributes as $oa)
-                        $this->hierarchy['outputAttributes'][$recursionLevel][$recursionPath[0][1]][] = $oa->serializeToArray();
+                        $this->hierarchy["outputAttributes"][$recursionLevel][$recursionPath[0][1]][] = $oa->serializeToArray();
                 }
             }
         }
@@ -416,12 +416,12 @@ class DBFit
 
             $outputAttributes = [];
             if ($recursionLevel === 0) {
-                foreach ($this->hierarchy['outputAttributes'][$recursionLevel] as $oa) {
+                foreach ($this->hierarchy["outputAttributes"][$recursionLevel] as $oa) {
                     $outputAttributes[] = Attribute::createFromArray($oa);
                 }
             }
             else {
-                foreach ($this->hierarchy['outputAttributes'][$recursionLevel][$recursionPath[0][1]] as $oa) {
+                foreach ($this->hierarchy["outputAttributes"][$recursionLevel][$recursionPath[0][1]] as $oa) {
                     $outputAttributes[] = Attribute::createFromArray($oa);
                 }
             }
@@ -468,14 +468,14 @@ class DBFit
                 }
                 else {
                     if ($recursionLevel === 0) {
-                        $k = array_key_first($this->hierarchy['hierarchyNodes'][0]);
-                        foreach ($this->hierarchy['hierarchyNodes'][0][$k]['attributes'] as $a) {
+                        $k = array_key_first($this->hierarchy["hierarchyNodes"][0]);
+                        foreach ($this->hierarchy["hierarchyNodes"][0][$k]["attributes"] as $a) {
                             $inputAttributes[] = Attribute::createFromArray($a);
                         }
                     }
                     else {
-                        $k = array_key_first($this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]]);
-                        foreach ($this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'] as $a) {
+                        $k = array_key_first($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]]);
+                        foreach ($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"] as $a) {
                             $inputAttributes[] = Attribute::createFromArray($a);
                         }
                     }
@@ -485,9 +485,9 @@ class DBFit
 
             if ($idVal !== null) {
                 if ($recursionLevel === 0)
-                    $attributes = $this->hierarchy['hierarchyNodes'][0][$k]['attributes'];
+                    $attributes = $this->hierarchy["hierarchyNodes"][0][$k]["attributes"];
                 else
-                    $attributes = $this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'];
+                    $attributes = $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"];
                 array_shift($attributes);
                 foreach ($attributes as $i => $a)
                     $attributes[$i] = Attribute::CreateFromArray($a);
@@ -508,7 +508,7 @@ class DBFit
                             $a->setDomain($domain);
 
                             $domain = array_flip($a->getDomain());
-                            $inst[$i] = $domain['null'];
+                            $inst[$i] = $domain["null"];
                         }
                     }
                 }
@@ -615,6 +615,16 @@ class DBFit
             $outputAttr = clone $final_attributes[$i_prob];
             $inputAttrs = array_map("aclai\\piton\\Utils::clone_object", array_slice($final_attributes, $numOutputAttributes));
 
+
+            // /* TODO Honor additional constraints */
+            // $this_final_data = $final_data;
+            // if ($outputAttribute->name in array_keys($this->additional_constraints)) {
+            // if ('exclude_attributes' in $this->additional_constraints[$outputAttribute->name]) {
+            //     $inputAttrs = array_filter(usa solo quelli che compaiono nelParametro keepOnlyAttributes, $inputAttrs)\
+            //     $this_final_data = ...
+            // }
+            // }
+
             /*if($idModelVersion !== null) {
                 $modelVersion = ModelVersion::where('id', $idModelVersion)->first();
                 if ($modelVersion->attributes === null) {$serializedAttributes = [];
@@ -623,7 +633,7 @@ class DBFit
                     }*/
                     /* Update model version with the attributes of the root node. */
                     /*ModelVersion::where('id', $idModelVersion)
-                      ->update(['attributes' => json_encode($serializedAttributes)]);
+                      ->update(["attributes" => json_encode($serializedAttributes)]);
                 }
             }*/
 
@@ -1136,12 +1146,12 @@ class DBFit
             $recursionLevel = count($recursionPath);
 
             if ($recursionLevel === 0) {
-                $k = array_key_first($this->hierarchy['hierarchyNodes'][0]);
-                $attributes = $this->hierarchy['hierarchyNodes'][0][$k]['attributes'];
+                $k = array_key_first($this->hierarchy["hierarchyNodes"][0]);
+                $attributes = $this->hierarchy["hierarchyNodes"][0][$k]["attributes"];
             }
             else {
-                $k = array_key_first($this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]]);
-                $attributes = $this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'];
+                $k = array_key_first($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]]);
+                $attributes = $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"];
             }
             if (array_search($attrName, array_column($attributes, 'name')) === false) {
 
@@ -1165,9 +1175,9 @@ class DBFit
                     $attributes[] = $v;
                 }
                 if ($recursionLevel === 0)
-                    $this->hierarchy['hierarchyNodes'][0][$k]['attributes'] = array_values($attributes);
+                    $this->hierarchy["hierarchyNodes"][0][$k]["attributes"] = array_values($attributes);
                 else
-                    $this->hierarchy['hierarchyNodes'][$recursionLevel][$recursionPath[0][1]][$k]['attributes'] = array_values($attributes);
+                    $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"] = array_values($attributes);
                 $raw_data[0] = (object)$raw_data_array;
             }
         }
@@ -1433,8 +1443,9 @@ class DBFit
         /* Each column has a tree of attributes, because the set of attributes for the column depends on the recursion path. This is done in order to leverage predicates that are the most specific.  */
         $this->setColumnAttributes($column, $recursionPath, $attributes);
 
-        if ($raw_data !== null)
+        if ($raw_data !== null) {
             return $raw_data;
+        }
     }
 
     /**
@@ -1454,33 +1465,33 @@ class DBFit
 
         /* The name of the class of the model/problem solved by the problem */
         $modelName = DBFit::cleanClassName($model->getClassAttribute()->getName());
-        $hierarchyNode['name'] = $modelName;
+        $hierarchyNode["name"] = $modelName;
         /* The id of the class_model instance associated to the molde into the database */
-        $hierarchyNode['model_id'] = $modelId;
+        $hierarchyNode["model_id"] = $modelId;
         foreach ($model->getAttributes() as $a)
-            $hierarchyNode['attributes'][] =  $a->serializeToArray();
+            $hierarchyNode["attributes"][] =  $a->serializeToArray();
         
         if ($fatherNode === null) {
             /* Case Level 0 */
             /* The name of the father-problem node, in this case it is empty (sons of root node) */
-            $hierarchyNode['father_node'] = [];
+            $hierarchyNode["father_node"] = [];
 
-            $this->hierarchy['hierarchyNodes'][0][$modelName] = $hierarchyNode;
+            $this->hierarchy["hierarchyNodes"][0][$modelName] = $hierarchyNode;
         } else {
             /* Case sub-problem */
             /* The name of the father-problem node */
             $fatherName = DBFit::CleanClassName($fatherNode);
-            $hierarchyNode['father_node'] = $fatherName;
+            $hierarchyNode["father_node"] = $fatherName;
             /* Each node has an array of sub-problems names. */
             /* These are stored when the sub-problem is being set, and not when the node is being set */
-            $this->hierarchy['hierarchyNodes'][$recursionLevel-1][$fatherName]['sub_problems'][] = $modelName;
+            $this->hierarchy["hierarchyNodes"][$recursionLevel-1][$fatherName]["sub_problems"][] = $modelName;
 
-            $this->hierarchy['hierarchyNodes'][$recursionLevel][$fatherName][$modelName] = $hierarchyNode;
+            $this->hierarchy["hierarchyNodes"][$recursionLevel][$fatherName][$modelName] = $hierarchyNode;
         }
     }
 
     /* Train and test all the model tree on the available data, and save to database */
-    public function updateModel(int $idModelVersion, array $recursionPath = [])
+    public function updateModel(int $idModelVersion, array $recursionPath = []) : bool
     {
         echo "DBFit->updateModel(" . Utils::toString($recursionPath) . ")" . PHP_EOL;
 
@@ -1491,7 +1502,8 @@ class DBFit
         }
 
         if (!($this->learner instanceof Learner)) {
-            Utils::die_error("Learner is not initialized. Please, use ->setLearner() or ->setLearningMethod()");
+            echo ("Learner is not initialized. Please, use ->setLearner() or ->setLearningMethod()");
+            return true;
         }
 
         /* Read the dataframes specific to this recursion path */
@@ -1506,9 +1518,10 @@ class DBFit
             echo "Train-time recursion stops here due to lack of data (recursionPath = " . Utils::toString($recursionPath)
                 . "). " . PHP_EOL;
             if ($recursionLevel == 0) {
-                Utils::die_error("Training failed! Couldn't find data.");
+                echo ("Training failed! Couldn't find data.");
+                return true;
             }
-            return;
+            return false;
         }
 
         /* Obtain output attributes */
@@ -1527,7 +1540,8 @@ class DBFit
             if (!$dataframe->numInstances()) {
                 echo "Skipping node due to lack of data." . PHP_EOL;
                 if ($recursionLevel == 0) {
-                    Utils::die_error("Training failed! No data instance found.");
+                    echo ("Training failed! No data instance found.");
+                    return true;
                 }
                 continue;
             }
@@ -1654,15 +1668,20 @@ class DBFit
         } // END foreach
 
         /* Recurse */
+        $erroroccurred = false;
         foreach ($childPaths as $childPath) {
             /** childPath = [i-prob, className, fatherNodeClassName] */
-            $this->updateModel($idModelVersion, $childPath);
+            $e = $this->updateModel($idModelVersion, $childPath);
+            if ($e) {
+                $erroroccurred = true;
+            }
         }
 
         if ($recursionPath === []) {
             //print_r($this->hierarchy);
-            ModelVersion::where('id', $idModelVersion)->update(['hierarchy' => json_encode($this->hierarchy)]);
+            ModelVersion::where('id', $idModelVersion)->update(["hierarchy" => json_encode($this->hierarchy)]);
         }
+        return $erroroccurred;
     }
 
     /**
@@ -1725,22 +1744,42 @@ class DBFit
      * @param bool $log If true, print a log of the execution. Useful for debugging.
      * @return array The classes which contains the instance, and information about the rule which covered it. 
      */
-    function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false, bool $timing = false) : array
+    function predictByIdentifier(string $idVal, array $recursionPath = [], ?int $idModelVersion = null, bool $log = false, bool $timing = false, $findWorkingModelOtherwise = true) : array
     {
-        /* The prediction is based on the problem associated with the model version. */
-        $q = ModelVersion::where('id', $idModelVersion);
-        // Utils::die_error(Utils::get_var_dump($q->count()));
-        if ($q->count() == 0) {
-            return [];
+        $attempts_countdown = 1;
+        if ($findWorkingModelOtherwise) {
+            $attempts_countdown = 500;
         }
 
-        $modelVersion = $q->first();
-        $idProblem = $modelVersion->id_problem;
-        $problem = Problem::where('id', $idProblem)->first();
+        $modelVersion = null;
+        $problem = null;
 
-        /* To enhance performance: re-store hierarchy object */
-        if ($modelVersion->hierarchy === NULL) {
-            Utils::die_error("modelVersion's hierarchy is NULL. This is likely due to an unfinished learning process.");
+        while ($attempts_countdown > 0) {
+            $attempts_countdown--;
+            /* The prediction is based on the problem associated with the model version. */
+            $q = ModelVersion::where('id', $idModelVersion);
+            // Utils::die_error(Utils::get_var_dump($q->count()));
+            if ($q->count() == 0) {
+                if ($attempts_countdown == 0) {
+                    return [];
+                } else {
+                    $idModelVersion--;
+                }
+            } else {
+                $modelVersion = $q->first();
+                $idProblem = $modelVersion->id_problem;
+                $problem = Problem::where('id', $idProblem)->first();
+
+                /* To enhance performance: re-store hierarchy object */
+                if ($modelVersion->hierarchy === NULL) {
+                    if ($attempts_countdown == 0) {
+                        Utils::die_error("modelVersion's hierarchy is NULL. This is likely due to an unfinished learning process.");
+                    } else {
+                        $idModelVersion--;
+                    }
+                }
+            }
+            // var_dump($idModelVersion);
         }
 
         $this->hierarchy = $modelVersion->hierarchy;
@@ -1865,14 +1904,14 @@ class DBFit
             if($timing) $tac = microtime(TRUE);
             if($timing) echo "after predict: " .  abs($tic - $tac) . "seconds.\n";
             /* If prediction failes (it could happen for suclasses), return */
-            if (!isset($predictionOutput['predictions'][$idVal])) {
+            if (!isset($predictionOutput["predictions"][$idVal])) {
                 if ($log) echo "Couldn't perform predictions on $className for $idVal\n";
                 return [];
             }
-            $predictedVal     = $predictionOutput['predictions'][$idVal];
-            $storedRules      = $predictionOutput['storedRules'][$idVal];
-            if ($predictionOutput['rules_measures'][$idVal] != "") {
-                $ruleMeasures     = $predictionOutput['rules_measures'][$idVal];
+            $predictedVal     = $predictionOutput["predictions"][$idVal];
+            $storedRules      = $predictionOutput["storedRules"][$idVal];
+            if ($predictionOutput["rules_measures"][$idVal] != "") {
+                $ruleMeasures     = $predictionOutput["rules_measures"][$idVal];
             } else {
                 if ($log) {
                     echo "No measures found for activated rule when predicting if $idVal" . PHP_EOL;
@@ -1920,21 +1959,21 @@ class DBFit
                 //     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]),
                 //     $idModelVersion)
                 // ];
-                $prediction['class'] = DBFit::cleanClassName($dataframe->getClassAttribute()->getName());
-                $prediction['predictedValue'] = $predictedStringVal;
+                $prediction["class"] = DBFit::cleanClassName($dataframe->getClassAttribute()->getName());
+                $prediction["predictedValue"] = $predictedStringVal;
                 /**
                  * Only the last sub-array contains the activated rules, while the previous rules
                  * are the rules which haven't been activated.
                  * The full rule would be the activated rule plus the conjunction of the negated precious rules.
                  */
                 if (empty($rulesAntecedents)) {
-                    $prediction['rules'] = [[]];
+                    $prediction["rules"] = [[]];
                 }
                 else {
-                    $prediction['rules'] = $rulesAntecedents;
+                    $prediction["rules"] = $rulesAntecedents;
                 }
-                $prediction['rule_stats'] = $ruleMeasures;
-                $prediction['subclasses'] = $this->predictByIdentifier(
+                $prediction["rule_stats"] = $ruleMeasures;
+                $prediction["subclasses"] = $this->predictByIdentifier(
                     $idVal,
                     array_merge($recursionPath, [[$i_prob, $predictedStringVal]]),
                     $idModelVersion,
@@ -2498,8 +2537,18 @@ class DBFit
         $recursionLevel = count($recursionPath);
         if (!$short) {
             if ($i_prob !== NULL) {
-                $currentLevelStr = str_replace(".", ".",
-                    $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName());
+                // var_dump($recursionPath);
+                // dd($this->outputColumns);
+                // dd($this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$i_prob]]["attributes"][0]["name"]name);
+                // dd(array_keys($this->hierarchy["hierarchyNodes"][$recursionLevel]));
+                // dd($this->outputColumns[$recursionLevel]);
+                // var_dump($recursionPath);
+                // // dd($this->outputColumns);
+                // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath));
+                $k = array_keys($this->hierarchy["hierarchyNodes"][$recursionLevel]);
+                $attribute_name = $this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$i_prob]]["attributes"][0]["name"];
+                // $attribute_name = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName();
+                $currentLevelStr = str_replace(".", ".", $attribute_name);
                 $out = str_replace("/", ".", $currentLevelStr);
             } else {
                 $out = "";
@@ -2660,37 +2709,39 @@ class DBFit
 
     public function setWhereClauses(array $whereClauses, bool $predicting = false) : self
     {
-        /* The retro-compatible case is hiddenly provided */
-        if (!$predicting && array_keys($whereClauses)[0] === "default" && array_keys($whereClauses)[1] === "onlyTraining") {
-            /* Training with both 'default' and 'onlyTraining' indexes*/    
-            $whereClauses = [array_merge($whereClauses['default'], $whereClauses['onlyTraining'])];
-        }
-        else if (array_keys($whereClauses)[0] === "default") {
-            /* Predicting, or training if only 'default' exists as an index */
-            $whereClauses = [$whereClauses['default']];
-        }
+        // if (count($whereClauses)) {
+            /* The retro-compatible case is hiddenly provided */
+            if (!$predicting && array_keys($whereClauses)[0] === "default" && array_keys($whereClauses)[1] === "onlyTraining") {
+                /* Training with both 'default' and 'onlyTraining' indexes*/
+                $whereClauses = [array_merge($whereClauses["default"], $whereClauses["onlyTraining"])];
+            }
+            else if (array_keys($whereClauses)[0] === "default") {
+                /* Predicting, or training if only 'default' exists as an index */
+                $whereClauses = [$whereClauses["default"]];
+            }
 
-        if (func_num_args() > count(get_defined_vars())) trigger_error(__FUNCTION__
-            . " was supplied more arguments than it needed. Got the following arguments:" . PHP_EOL
-            . Utils::toString(func_get_args()), E_USER_WARNING);
+            if (func_num_args() > count(get_defined_vars())) trigger_error(__FUNCTION__
+                . " was supplied more arguments than it needed. Got the following arguments:" . PHP_EOL
+                . Utils::toString(func_get_args()), E_USER_WARNING);
 
-        // TODO explain new hierachical structure, and make this more elastic
-        Utils::listify($whereClauses);
-        if (Utils::is_array_of_strings($whereClauses)) {
-            $whereClauses = [$whereClauses];
-        }
+            // TODO explain new hierachical structure, and make this more elastic
+            Utils::listify($whereClauses);
+            if (Utils::is_array_of_strings($whereClauses)) {
+                $whereClauses = [$whereClauses];
+            }
 
-        foreach ($whereClauses as $whereClausesSet) {
-            foreach ($whereClausesSet as $i => $jc) {
-                if (!is_string($jc)) {
-                    if (!(is_array($jc) && count($jc) > 2 && is_string($jc[0]) && is_string($jc[1])
-                        && in_array(strtoupper($jc[1]), ["NOT IN", "IN"]))) {
-                        Utils::die_error("Invalid whereClause at $i-th level: "
-                            . Utils::get_var_dump($jc));
+            foreach ($whereClauses as $whereClausesSet) {
+                foreach ($whereClausesSet as $i => $jc) {
+                    if (!is_string($jc)) {
+                        if (!(is_array($jc) && count($jc) > 2 && is_string($jc[0]) && is_string($jc[1])
+                            && in_array(strtoupper($jc[1]), ["NOT IN", "IN"]))) {
+                            Utils::die_error("Invalid whereClause at $i-th level: "
+                                . Utils::get_var_dump($jc));
+                        }
                     }
                 }
             }
-        }
+        // }
         $this->whereClauses = $whereClauses;
         return $this;
     }

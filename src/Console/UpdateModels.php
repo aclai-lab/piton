@@ -257,7 +257,11 @@ class UpdateModels extends Command
 
       /*  Launch training */
       $start = microtime(TRUE);
-      $db_fit->updateModel($modelVersion->id);
+      $erroroccurred = $db_fit->updateModel($modelVersion->id);
+      if ($erroroccurred) {
+        ModelVersion::destroy($modelVersion->id);
+        echo PHP_EOL . "An ERROR occurred. Trained models were not saved" . PHP_EOL;
+      }
       $end = microtime(TRUE);
       echo "updateModel took " . ($end - $start) . " seconds to complete." . PHP_EOL;
     }
