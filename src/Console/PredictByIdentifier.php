@@ -43,6 +43,8 @@ class PredictByIdentifier extends Command
     $db_fit = new DBFit();
     // Utils::die_error(Utils::get_var_dump(ModelVersion::orderByDesc('id')->count()));
     $modelVersion = ModelVersion::orderByDesc('id')->first(); # Get most recent version
+    // dd(ModelVersion::orderByDesc('id'));
+    // dd($modelVersion);
     $predictions = $db_fit->predictByIdentifier($idVal,[],$modelVersion->id, false, false);
     //dd("It worked");
     dd($predictions);
