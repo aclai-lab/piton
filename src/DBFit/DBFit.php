@@ -395,7 +395,9 @@ class DBFit
         if ($raw_data === []) {
             return [];
         }
-        $this->assignColumnAttributes($outputColumn, null, $recursionPath, true, false);
+
+        $this->assignColumnAttributes($outputColumn, $idVal === NULL ? null : $raw_data, $recursionPath, true, false);
+        // dd($outputColumn);
 
         /* Obtaining attributes and assigning columns to attributes */
         if ($idVal === NULL) {
@@ -540,8 +542,6 @@ class DBFit
                 foreach ($outputAttributes as $oa) {
                     array_unshift($inst, 0);
                 }
-
-
                 
                 $data[0] = $attributes;
                 $data[1][$idVal] = $inst;
@@ -1163,296 +1163,320 @@ class DBFit
         $attrName = $this->getColumnAttrName($column);
 
         /* At prediction time, I make the attributes the same as the models' attributes */
+
+        $attributes = NULL;
         if ($raw_data !== null) {
             $recursionLevel = count($recursionPath);
 
             if ($recursionLevel === 0) {
                 $k = array_key_first($this->hierarchy["hierarchyNodes"][0]);
-                $attributes = $this->hierarchy["hierarchyNodes"][0][$k]["attributes"];
+                $allAttributes = $this->hierarchy["hierarchyNodes"][0][$k]["attributes"];
             }
             else {
                 $k = array_key_first($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]]);
-                $attributes = $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"];
+                $allAttributes = $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"];
             }
-            if (array_search($attrName, array_column($attributes, "name")) === false) {
+            // dd(array_search($attrName, array_column($allAttributes, "name")));
+            // dd($attrName);
+            // dd($allAttributes);
+            if (array_search($attrName, array_column($allAttributes, "name")) === false) {
 
                 $value = array_column($raw_data, $this->getColumnNickname($column))[0];
 
                 $input = preg_quote($attrName, '~'); // don't forget to quote input string!
-                $result = preg_grep('~' . $input . '~', array_column($attributes, "name"));
+                $result = preg_grep('~' . $input . '~', array_column($allAttributes, "name"));
+                // dd($input);
+                // dd(array_column($allAttributes, "name"));
+                // dd($result);
 
                 /* Use value and result to create new attributes for instance and set only
                     result_value to value, the other to NO_value; then remove result from instance */
                 $raw_data_array = (array)$raw_data[0];
                 unset($raw_data_array[$this->getColumnNickname($column)]);
+                $attributes = [];
                 foreach ($result as $i => $newAttribute) {
                     if ($newAttribute === $attrName . '_' . $value)
                         $raw_data_array[$this->getColNickname($newAttribute)] = $value;
                     else
                         $raw_data_array[$this->getColNickname($newAttribute)] = "NO_". DBFit::CleanClassName($newAttribute);
                     /* Also move correspondent attribute to the end of array: doing so, they are in the same order */
-                    $v = $attributes[$i];
-                    unset($attributes[$i]);
-                    $attributes[] = $v;
+                    $outputAttribute = $allAttributes[$i];
+                    unset($allAttributes[$i]);
+                    # Note: class attributes go last
+                    $allAttributes[] = $outputAttribute;
+                    $attributes[] = $this->convertToRealAttribute($outputAttribute);
+                    var_dump($attributes);
                 }
+                // dd($allAttributes);
+
                 if ($recursionLevel === 0)
-                    $this->hierarchy["hierarchyNodes"][$recursionLevel][$k]["attributes"] = array_values($attributes);
+                    $this->hierarchy["hierarchyNodes"][$recursionLevel][$k]["attributes"] = array_values($allAttributes);
                 else
-                    $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"] = array_values($attributes);
+                    $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"] = array_values($allAttributes);
                 $raw_data[0] = (object)$raw_data_array;
             }
-        }
+        } else {
+            switch (true) {
+                /* Forcing a set of binary categorical attributes */
+                case $this->getColumnTreatmentType($column) == "ForceSet":
+                    $depth = $this->getColumnTreatmentArg($column, 0);
 
-        switch (true) {
-            /* Forcing a set of binary categorical attributes */
-            case $this->getColumnTreatmentType($column) == "ForceSet":
-                $depth = $this->getColumnTreatmentArg($column, 0);
-
-                /* Find unique values */
-                $domain = null;
-                if ($raw_data === null) {
-                  $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
-                      NULL, true, true);
-                  $domain = array_column($raw_data, $this->getColumnNickname($column));
-                }
-                else {
-                  /* I need to extrapolate the column (array indexes don't come in handy) */
-                  $domain = array_column($raw_data, $this->getColumnNickname($column));
-                  $domain = array_unique($domain);
-                  $domain = array_filter($domain, "aclai\\piton\\Utils::notNull");
-                  $domain = array_values($domain);
-                }
-
-                /* Also null appears as a value, I remove it for outputColumns */
-                if ($isOutputAttribute) {
-                  foreach ($domain as $i => $val) {
-                    if ($val === null)
-                      unset($domain[$i]);
-                  }
-                }
-
-                /* Apply transform to $domain */
-                $transformer = $this->getColumnTreatmentArg($column, 1);
-                if ($transformer !== NULL) {
-                    // $transformer = function ($x) { return [$x]; };
-                    foreach ($val as $domain) {
-                        $values = $transformer($val);
-                        if ($values !== NULL) {
-                            $domain = array_merge($domain, $values);
-                        }
+                    /* Find unique values */
+                    $domain = null;
+                    if ($raw_data === null) {
+                      $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
+                          NULL, true, true);
+                      $domain = array_column($raw_data, $this->getColumnNickname($column));
                     }
-                    $domain = array_unique($domain);
-                    $domain = array_values($domain);
-                }
-
-                /* Apply transform to $domain */
-                $transformer = $this->getColumnTreatmentArg($column, 1);
-                if ($transformer !== NULL) {
-                    // $transformer = function ($x) { return [$x]; };
-                    foreach ($val as $domain) {
-                        $values = $transformer($val);
-                        if ($values !== NULL) {
-                            $domain = array_merge($domain, $values);
-                        }
+                    else {
+                      /* I need to extrapolate the column (array indexes don't come in handy) */
+                      $domain = array_column($raw_data, $this->getColumnNickname($column));
+                      $domain = array_unique($domain);
+                      $domain = array_filter($domain, "aclai\\piton\\Utils::notNull");
+                      $domain = array_values($domain);
                     }
-                    $domain = array_unique($domain);
-                }
 
-                if ($isOutputAttribute) {
-                    usort($domain, [$this, "cmp_nodes"]);
-                }
-                // var_dump($domain);
-
-                if (!count($domain)) {
-                    // warn("Couldn't apply ForceSet (depth: " . toString($depth) . ") to column " . $this->getColumnName($column) . ". No data instance found.");
-                    $attributes = NULL;
-                } else {
-                    $attributes = $this->forceCategoricalBinary($depth, $domain, $attrName);
-                }
-                if($timing) $tac = microtime(TRUE);
-                if($timing) echo "case ForceSet took : " .  abs($tic - $tac) . "seconds.\n\n";
-                break;
-            /* Enum column */
-            case $this->getColumnAttrType($column) == "enum":
-                $domain_arr_str = (preg_replace("/enum\((.*)\)/i", "[$1]", $this->getColumnMySQLType($column)));
-                $domain_arr = NULL;
-                eval("\$domain_arr = " . $domain_arr_str . ";");
-                $attributes = [new DiscreteAttribute($attrName, "enum", $domain_arr)];
-                if($timing) $tac = microtime(TRUE);
-                if($timing) echo "case enum took : " .  abs($tic - $tac) . "seconds.\n\n";
-                break;
-            /* Forcing a categorical attribute */
-            /**
-             * In this moment, ForceCategorical is forced to be as ForceCategoricalBinary.
-             * TODO this could change in the future, so the commented code must not me removed!
-             */
-            case $this->getColumnTreatmentType($column) == "ForceCategorical":
-                $depth = $this->getColumnTreatmentArg($column, 0);
-
-                /* Find unique values */
-                $domain = null;
-                if ($raw_data === null) {
-                  $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
-                      NULL, true, true);
-                  $domain = array_column($raw_data, $this->getColumnNickname($column));
-                }
-                else {
-                  /* I need to extrapolate the column (array indexes don't come in handy) */
-                  $domain = array_column($raw_data, $this->getColumnNickname($column));
-                  $domain = array_unique($domain);
-                  $domain = array_filter($domain, "aclai\\piton\\Utils::notNull");
-                  $domain = array_values($domain);
-                }
-
-                /* Also null appears as a value, I remove it for outputColumns */
-                if ($isOutputAttribute) {
-                  foreach ($domain as $i => $val) {
-                    if ($val === null)
-                      unset($domain[$i]);
-                  }
-                }
-
-                /* Apply transform to $domain */
-                $transformer = $this->getColumnTreatmentArg($column, 1);
-                if ($transformer !== NULL) {
-                    // $transformer = function ($x) { return [$x]; };
-                    foreach ($val as $domain) {
-                        $values = $transformer($val);
-                        if ($values !== NULL) {
-                            $domain = array_merge($domain, $values);
-                        }
+                    /* Also null appears as a value, I remove it for outputColumns */
+                    if ($isOutputAttribute) {
+                      foreach ($domain as $i => $val) {
+                        if ($val === null)
+                          unset($domain[$i]);
+                      }
                     }
-                    $domain = array_unique($domain);
-                    $domain = array_values($domain);
-                }
 
-                if ($isOutputAttribute) {
-                    usort($domain, [$this, "cmp_nodes"]);
-                }
-                // var_dump($domain);
-
-                if (!count($domain)) {
-                    // warn("Couldn't apply ForceSet (depth: " . toString($depth) . ") to column " . $this->getColumnName($column) . ". No data instance found.");
-                    $attributes = NULL;
-                } else if (count($domain) > 2) {
-                    $this->setColumnTreatment($column, "ForceSet");
-                    $attributes = $this->forceCategoricalBinary($depth, $domain, $attrName);
-                } else {
-                    $attributes = [new DiscreteAttribute($attrName, "enum", $domain)];
-                }
-                if($timing) $tac = microtime(TRUE);
-                if($timing) echo "case forceCategorical took : " .  abs($tic - $tac) . "seconds.\n\n";
-                break;
-
-            /* Numeric column */
-            case in_array($this->getColumnAttrType($column), ["int", "float", "double"]):
-                $attributes = [new ContinuousAttribute($attrName, $this->getColumnAttrType($column))];
-                if($timing) $tac = microtime(TRUE);
-                if($timing) echo "case in_array [int, float, double] took : " .  abs($tic - $tac) . "seconds.\n\n";
-                break;
-            /* Boolean column */
-            case in_array($this->getColumnAttrType($column), ["bool", "boolean"]):
-                $attributes = [new DiscreteAttribute($attrName, "bool", ["0", "1"])];
-                if($timing) $tac = microtime(TRUE);
-                if($timing) echo "case in_array [bool, boolean] took : " .  abs($tic - $tac) . "seconds.\n\n";
-                break;
-            /* Text column */
-            case $this->getColumnAttrType($column) == "text":
-                switch ($this->getColumnTreatmentType($column)) {
-                    case "BinaryBagOfWords":
-
-                        /* Generate binary attributes indicating the presence of each word */
-                        $generateDictAttrs = function ($dict) use ($attrName, &$column) {
-                            $attributes = [];
-                            foreach ($dict as $word) {
-                                $a = new DiscreteAttribute("'$word' in $attrName",
-                                    "word_presence", ["N", "Y"], $word);
-                                $a->setMetadata($word);
-                                $attributes[] = $a;
+                    /* Apply transform to $domain */
+                    $transformer = $this->getColumnTreatmentArg($column, 1);
+                    if ($transformer !== NULL) {
+                        // $transformer = function ($x) { return [$x]; };
+                        foreach ($val as $domain) {
+                            $values = $transformer($val);
+                            if ($values !== NULL) {
+                                $domain = array_merge($domain, $values);
                             }
-                            return $attributes;
-                        };
+                        }
+                        $domain = array_unique($domain);
+                        $domain = array_values($domain);
+                    }
 
-                        /* The argument can be the dictionary size (k), or more directly the dictionary as an array of strings */
-                        $arg = $this->getColumnTreatmentArg($column, 0);
-                        if (is_array($arg)) {
-                            $dict = $arg;
-                            $attributes = $generateDictAttrs($dict);
-                        } else if (is_integer($arg)) {
-                            $k = $arg;
-
-                            /* Find $k most frequent words */
-                            $word_counts = [];
-                            $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath, NULL, true);
-
-                            $lang = $this->defaultOptions["textLanguage"];
-                            if (!isset($this->stop_words)) {
-                                $this->stop_words = [];
+                    /* Apply transform to $domain */
+                    $transformer = $this->getColumnTreatmentArg($column, 1);
+                    if ($transformer !== NULL) {
+                        // $transformer = function ($x) { return [$x]; };
+                        foreach ($val as $domain) {
+                            $values = $transformer($val);
+                            if ($values !== NULL) {
+                                $domain = array_merge($domain, $values);
                             }
-                            if (!isset($this->stop_words[$lang])) {
-                                $this->stop_words[$lang] = explode("\n", file_get_contents("assets/" . $lang . "-stopwords.txt"));
+                        }
+                        $domain = array_unique($domain);
+                    }
+
+                    if ($isOutputAttribute) {
+                        usort($domain, [$this, "cmp_nodes"]);
+                    }
+                    // var_dump($domain);
+
+                    if (!count($domain)) {
+                        // warn("Couldn't apply ForceSet (depth: " . toString($depth) . ") to column " . $this->getColumnName($column) . ". No data instance found.");
+                        $attributes = NULL;
+                        // $domain = ["dummy_value"];
+                        // $attributes = $this->forceCategoricalBinary($depth, $domain, $attrName);
+                    } else {
+                        $attributes = $this->forceCategoricalBinary($depth, $domain, $attrName);
+                    }
+
+                    // if($this->getColumnName($column) == "raccomandazioni_terapeutiche.tipo") {
+                    //     // dd($domain);
+                    //     dd($attributes);
+                    //     // dd($column["attributes"]);
+                    //     // dd(($column["attributes"][$this->getPathRepr($recursionPath)]));
+                    // }
+
+                    if($timing) $tac = microtime(TRUE);
+                    if($timing) echo "case ForceSet took : " .  abs($tic - $tac) . "seconds.\n\n";
+                    break;
+                /* Enum column */
+                case $this->getColumnAttrType($column) == "enum":
+                    $domain_arr_str = (preg_replace("/enum\((.*)\)/i", "[$1]", $this->getColumnMySQLType($column)));
+                    $domain_arr = NULL;
+                    eval("\$domain_arr = " . $domain_arr_str . ";");
+                    $attributes = [new DiscreteAttribute($attrName, "enum", $domain_arr)];
+                    if($timing) $tac = microtime(TRUE);
+                    if($timing) echo "case enum took : " .  abs($tic - $tac) . "seconds.\n\n";
+                    break;
+                /* Forcing a categorical attribute */
+                /**
+                 * In this moment, ForceCategorical is forced to be as ForceCategoricalBinary.
+                 * TODO this could change in the future, so the commented code must not me removed!
+                 */
+                case $this->getColumnTreatmentType($column) == "ForceCategorical":
+                    $depth = $this->getColumnTreatmentArg($column, 0);
+
+                    /* Find unique values */
+                    $domain = null;
+                    if ($raw_data === null) {
+                      $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath,
+                          NULL, true, true);
+                      $domain = array_column($raw_data, $this->getColumnNickname($column));
+                    }
+                    else {
+                      /* I need to extrapolate the column (array indexes don't come in handy) */
+                      $domain = array_column($raw_data, $this->getColumnNickname($column));
+                      $domain = array_unique($domain);
+                      $domain = array_filter($domain, "aclai\\piton\\Utils::notNull");
+                      $domain = array_values($domain);
+                    }
+
+                    /* Also null appears as a value, I remove it for outputColumns */
+                    if ($isOutputAttribute) {
+                      foreach ($domain as $i => $val) {
+                        if ($val === null)
+                          unset($domain[$i]);
+                      }
+                    }
+
+                    /* Apply transform to $domain */
+                    $transformer = $this->getColumnTreatmentArg($column, 1);
+                    if ($transformer !== NULL) {
+                        // $transformer = function ($x) { return [$x]; };
+                        foreach ($val as $domain) {
+                            $values = $transformer($val);
+                            if ($values !== NULL) {
+                                $domain = array_merge($domain, $values);
                             }
-                            foreach ($raw_data as $raw_row) {
-                                $text = $raw_row[$this->getColumnNickname($column)];
+                        }
+                        $domain = array_unique($domain);
+                        $domain = array_values($domain);
+                    }
 
-                                if ($text !== NULL) {
-                                    $words = $this->text2words($text, $lang);
+                    if ($isOutputAttribute) {
+                        usort($domain, [$this, "cmp_nodes"]);
+                    }
+                    // var_dump($domain);
 
-                                    foreach ($words as $word) {
-                                        if (!isset($word_counts[$word]))
-                                            $word_counts[$word] = 0;
-                                        $word_counts[$word] += 1;
-                                    }
+                    if (!count($domain)) {
+                        // warn("Couldn't apply ForceSet (depth: " . toString($depth) . ") to column " . $this->getColumnName($column) . ". No data instance found.");
+                        $attributes = NULL;
+                    } else if (count($domain) > 2) {
+                        $this->setColumnTreatment($column, "ForceSet");
+                        $attributes = $this->forceCategoricalBinary($depth, $domain, $attrName);
+                    } else {
+                        $attributes = [new DiscreteAttribute($attrName, "enum", $domain)];
+                    }
+                    if($timing) $tac = microtime(TRUE);
+                    if($timing) echo "case forceCategorical took : " .  abs($tic - $tac) . "seconds.\n\n";
+                    break;
+
+                /* Numeric column */
+                case in_array($this->getColumnAttrType($column), ["int", "float", "double"]):
+                    $attributes = [new ContinuousAttribute($attrName, $this->getColumnAttrType($column))];
+                    if($timing) $tac = microtime(TRUE);
+                    if($timing) echo "case in_array [int, float, double] took : " .  abs($tic - $tac) . "seconds.\n\n";
+                    break;
+                /* Boolean column */
+                case in_array($this->getColumnAttrType($column), ["bool", "boolean"]):
+                    $attributes = [new DiscreteAttribute($attrName, "bool", ["0", "1"])];
+                    if($timing) $tac = microtime(TRUE);
+                    if($timing) echo "case in_array [bool, boolean] took : " .  abs($tic - $tac) . "seconds.\n\n";
+                    break;
+                /* Text column */
+                case $this->getColumnAttrType($column) == "text":
+                    switch ($this->getColumnTreatmentType($column)) {
+                        case "BinaryBagOfWords":
+
+                            /* Generate binary attributes indicating the presence of each word */
+                            $generateDictAttrs = function ($dict) use ($attrName, &$column) {
+                                $attributes = [];
+                                foreach ($dict as $word) {
+                                    $a = new DiscreteAttribute("'$word' in $attrName",
+                                        "word_presence", ["N", "Y"], $word);
+                                    $a->setMetadata($word);
+                                    $attributes[] = $a;
                                 }
-                            }
-                            // var_dump($word_counts);
+                                return $attributes;
+                            };
 
-                            if (!count($word_counts)) {
-                                // Utils::warn("Couldn't derive a BinaryBagOfWords dictionary for column \"" . $this->getColumnName($column) . "\". This column will be ignored.");
-
-                                $attributes = NULL;
-                            } else {
-                                $dict = [];
-                                foreach (range(0, $k - 1) as $i) {
-                                    $max_count = max($word_counts);
-                                    $max_word = array_search($max_count, $word_counts);
-                                    $dict[] = $max_word;
-                                    unset($word_counts[$max_word]);
-                                    if (!count($word_counts)) {
-                                        break;
-                                    }
-                                }
-                                // var_dump($dict);
-
-                                // if (count($dict) < $k) {
-                                //     Utils::warn("Couldn't derive a BinaryBagOfWords dictionary of size $k for column \"" . $this->getColumnName($column) . "\". Dictionary of size " . count($dict) . " will be used.");
-                                // }
+                            /* The argument can be the dictionary size (k), or more directly the dictionary as an array of strings */
+                            $arg = $this->getColumnTreatmentArg($column, 0);
+                            if (is_array($arg)) {
+                                $dict = $arg;
                                 $attributes = $generateDictAttrs($dict);
+                            } else if (is_integer($arg)) {
+                                $k = $arg;
+
+                                /* Find $k most frequent words */
+                                $word_counts = [];
+                                $raw_data = $this->SQLSelectColumns([$column], NULL, $recursionPath, NULL, true);
+
+                                $lang = $this->defaultOptions["textLanguage"];
+                                if (!isset($this->stop_words)) {
+                                    $this->stop_words = [];
+                                }
+                                if (!isset($this->stop_words[$lang])) {
+                                    $this->stop_words[$lang] = explode("\n", file_get_contents("assets/" . $lang . "-stopwords.txt"));
+                                }
+                                foreach ($raw_data as $raw_row) {
+                                    $text = $raw_row[$this->getColumnNickname($column)];
+
+                                    if ($text !== NULL) {
+                                        $words = $this->text2words($text, $lang);
+
+                                        foreach ($words as $word) {
+                                            if (!isset($word_counts[$word]))
+                                                $word_counts[$word] = 0;
+                                            $word_counts[$word] += 1;
+                                        }
+                                    }
+                                }
+                                // var_dump($word_counts);
+
+                                if (!count($word_counts)) {
+                                    // Utils::warn("Couldn't derive a BinaryBagOfWords dictionary for column \"" . $this->getColumnName($column) . "\". This column will be ignored.");
+
+                                    $attributes = NULL;
+                                } else {
+                                    $dict = [];
+                                    foreach (range(0, $k - 1) as $i) {
+                                        $max_count = max($word_counts);
+                                        $max_word = array_search($max_count, $word_counts);
+                                        $dict[] = $max_word;
+                                        unset($word_counts[$max_word]);
+                                        if (!count($word_counts)) {
+                                            break;
+                                        }
+                                    }
+                                    // var_dump($dict);
+
+                                    // if (count($dict) < $k) {
+                                    //     Utils::warn("Couldn't derive a BinaryBagOfWords dictionary of size $k for column \"" . $this->getColumnName($column) . "\". Dictionary of size " . count($dict) . " will be used.");
+                                    // }
+                                    $attributes = $generateDictAttrs($dict);
+                                }
+                            } else if ($arg === NULL) {
+                                Utils::die_error("Please specify a parameter (dictionary or dictionary size)"
+                                    . " for bag-of-words"
+                                    . " processing column '" . $this->getColumnName($column) . "'.");
+                            } else {
+                                Utils::die_error("Unknown type of parameter for bag-of-words"
+                                    . " (column '" . $this->getColumnName($column) . "'): "
+                                    . Utils::get_var_dump($arg) . ".");
                             }
-                        } else if ($arg === NULL) {
-                            Utils::die_error("Please specify a parameter (dictionary or dictionary size)"
-                                . " for bag-of-words"
-                                . " processing column '" . $this->getColumnName($column) . "'.");
-                        } else {
-                            Utils::die_error("Unknown type of parameter for bag-of-words"
-                                . " (column '" . $this->getColumnName($column) . "'): "
-                                . Utils::get_var_dump($arg) . ".");
-                        }
-                        break;
-                    default:
-                        Utils::die_error("Unknown treatment for text column \""
-                            . $this->getColumnName($column) . "\" : "
-                            . Utils::get_var_dump($this->getColumnTreatmentType($column)));
-                        break;
-                }
-                if($timing) $tac = microtime(TRUE);
-                if($timing) echo "case text took : " .  abs($tic - $tac) . "seconds.\n\n";
-                break;
-            default:
-                Utils::die_error("Unknown column type: " . $this->getColumnMySQLType($column));
-                if($timing) $tac = microtime(TRUE);
-                if($timing) echo "case default took : " .  abs($tic - $tac) . "seconds.\n\n";
-                break;
+                            break;
+                        default:
+                            Utils::die_error("Unknown treatment for text column \""
+                                . $this->getColumnName($column) . "\" : "
+                                . Utils::get_var_dump($this->getColumnTreatmentType($column)));
+                            break;
+                    }
+                    if($timing) $tac = microtime(TRUE);
+                    if($timing) echo "case text took : " .  abs($tic - $tac) . "seconds.\n\n";
+                    break;
+                default:
+                    Utils::die_error("Unknown column type: " . $this->getColumnMySQLType($column));
+                    if($timing) $tac = microtime(TRUE);
+                    if($timing) echo "case default took : " .  abs($tic - $tac) . "seconds.\n\n";
+                    break;
+            }
         }
 
         /* Sanity check */
@@ -2491,6 +2515,7 @@ class DBFit
                 $this->addOutputColumn($col);
             }
         }
+
         return $this;
     }
 
@@ -2664,12 +2689,22 @@ class DBFit
                 // // dd($this->outputColumns);
                 // // dd($this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$i_prob]]["attributes"][0]["name"]name);
                 // // dd(array_keys($this->hierarchy["hierarchyNodes"][$recursionLevel]));
-                // // dd($this->outputColumns[$recursionLevel]);
-                // // var_dump($recursionPath);
+                // dd($this->outputColumns[$recursionLevel]);
+                // dd($this->outputColumns[$recursionLevel]["attributes"]);
+                // dd($recursionPath);
+                // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath));
                 // // // dd($this->outputColumns);
                 // // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath));
                 // $k = array_keys($this->hierarchy["hierarchyNodes"][$recursionLevel]);
                 // $attribute_name = $this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$i_prob]]["attributes"][0]["name"];
+                if (true) {
+                    $tmp = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath);
+                    if ($tmp[0]->getName() != "Terapia_Calcio supplementazione" && $i_prob != 0) {
+                        // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName());
+                        // dd($i_prob);
+                        dd($tmp);
+                    }
+                }
                 $attribute_name = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName();
                 $currentLevelStr = str_replace(".", ".", $attribute_name);
                 $out = str_replace("/", ".", $currentLevelStr);
@@ -2795,18 +2830,18 @@ class DBFit
         return $colsNames;
     }
 
-    function setOutputColumnName(?string $outputColumnName, $treatment = "ForceCategorical"): self
-    {
-        if (func_num_args() > count(get_defined_vars())) trigger_error(__FUNCTION__
-            . " was supplied more arguments than it needed. Got the following arguments:" . PHP_EOL
-            . toString(func_get_args()), E_USER_WARNING);
+    // function setOutputColumnName(?string $outputColumnName, $treatment = "ForceCategorical"): self
+    // {
+    //     if (func_num_args() > count(get_defined_vars())) trigger_error(__FUNCTION__
+    //         . " was supplied more arguments than it needed. Got the following arguments:" . PHP_EOL
+    //         . toString(func_get_args()), E_USER_WARNING);
 
-        if ($outputColumnName !== NULL) {
-            return $this->setOutputColumns([[$outputColumnName, $treatment]]);
-        } else {
-            return $this->setOutputColumns([]);
-        }
-    }
+    //     if ($outputColumnName !== NULL) {
+    //         return $this->setOutputColumns([[$outputColumnName, $treatment]]);
+    //     } else {
+    //         return $this->setOutputColumns([]);
+    //     }
+    // }
 
     public function getIdentifierColumnName() : string
     {
@@ -3200,6 +3235,15 @@ class DBFit
         }
         return $attributes;
     }
+
+  /** Ugly patch */
+  public function convertToRealAttribute(array $attribute) : Attribute
+  {
+    if (!($attribute["type"] == "bool")) {
+        dd("Unknown attribute type in convertToRealAttribute: '${attribute["type"]}' .");
+    }
+    return new DiscreteAttribute($attribute["name"], "enum", $attribute["domain"]);
+  }
 
   /** Functions to get information about the problem. */
   public function getInputTables() : array

@@ -83,7 +83,7 @@ class RuleBasedModel extends DiscriminativeModel
         if ($this->attributes !== NULL) {
             // $allTestData->sortAttrsAs($this->attributes);
             #print_r($testData->getAttributes());
-            $allTestData->sortAttrsAs($this->attributes, true);
+            $allTestData->sortAttrsAs($this->attributes, true, true);
 
             /* Predict */
             $classAttr = $allTestData->getClassAttribute();

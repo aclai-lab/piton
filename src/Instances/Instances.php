@@ -496,9 +496,9 @@ class Instances
                     Utils::die_error("Couldn't find attribute '{$newAttribute->getName()}' in the current attribute list "
                                      . Utils::get_arr_dump($this->attributes) . " in Instances->sortAttrsAs");
                 }
-                // else {
-                //     TODO
-                // }
+                else {
+                    $oldAttribute = new DiscreteAttribute("dummy", "dummy-attribute", ["dummy_value"]);
+                }
             }
 
             if (!$newAttribute->isEqualTo($oldAttribute)) {
@@ -524,10 +524,15 @@ class Instances
                 $oldAttr = $oldAndNewAttr[0];
                 $newAttr = $oldAndNewAttr[1];
                 $new_i = $newAttr->getIndex();
-                $oldVal = $this->getRowVal($row, $oldAttr->getIndex());
                 if ($allowDataLoss) {
-                    $newRow[$new_i] = $newAttr->reprValAs($oldAttr, $oldVal, true);
+                    if ($oldAttr->getName() == "dummy") {
+                        $newRow[$new_i] = null;
+                    } else {
+                        $oldVal = $this->getRowVal($row, $oldAttr->getIndex());
+                        $newRow[$new_i] = $newAttr->reprValAs($oldAttr, $oldVal, true);
+                    }
                 } else {
+                    $oldVal = $this->getRowVal($row, $oldAttr->getIndex());
                     $newRow[$new_i] = $newAttr->reprValAs($oldAttr, $oldVal);
                 }
             }
