@@ -468,7 +468,7 @@ class Instances
     /**
      * Resort attributes and data according to an extern attribute set
      */
-    public function sortAttrsAs(array $newAttributes, bool $allowDataLoss = false): bool
+    public function sortAttrsAs(array $newAttributes, bool $allowDataLoss = false, bool $allowDummyAttributes = false): bool
     {
         $sameAttributes = true;
 
@@ -492,8 +492,13 @@ class Instances
                 }
             }
             if ($oldAttribute === NULL) {
-                Utils::die_error("Couldn't find attribute '{$newAttribute->getName()}' in the current attribute list "
-                                 . Utils::get_arr_dump($this->attributes) . " in Instances->sortAttrsAs");
+                if (!$allowDummyAttributes) {
+                    Utils::die_error("Couldn't find attribute '{$newAttribute->getName()}' in the current attribute list "
+                                     . Utils::get_arr_dump($this->attributes) . " in Instances->sortAttrsAs");
+                }
+                // else {
+                //     TODO
+                // }
             }
 
             if (!$newAttribute->isEqualTo($oldAttribute)) {

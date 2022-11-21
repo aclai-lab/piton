@@ -393,15 +393,21 @@ class DBFit
         if ($raw_data === []) {
             return [];
         }
-
         $this->assignColumnAttributes($outputColumn, null, $recursionPath, true, false);
 
         /* Obtaining attributes and assigning columns to attributes */
         if ($idVal === NULL) {
             $outputAttributes = $this->getColumnAttributes($outputColumn, $recursionPath);
-            if ($outputAttributes === null) {
+
+            // if($this->getColumnName($outputColumn) == "raccomandazioni_terapeutiche.tipo") {
+            //     // dd(($outputColumn["attributes"][$this->getPathRepr($recursionPath)]));
+            //     dd($outputAttributes);
+            // }
+            // dd($this->getPathRepr($recursionPath));
+
+            if ($outputAttributes !== null) {
                 if ($recursionLevel === 0) {
-                    // echo $outputAttributes;
+                    // print_r($outputAttributes);
                     foreach ($outputAttributes as $oa)
                         $this->hierarchy["outputAttributes"][$recursionLevel][] = $oa->serializeToArray();
                 }
@@ -410,11 +416,22 @@ class DBFit
                         $this->hierarchy["outputAttributes"][$recursionLevel][$recursionPath[0][1]][] = $oa->serializeToArray();
                 }
             }
+            // else {
+            //     dd($outputColumn);
+            // }
         }
         else {
-            //$this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
+            // $this->assignColumnAttributes($outputColumn, $raw_data, $recursionPath, true, false);
 
             $outputAttributes = [];
+            if(!(in_array("outputAttributes", array_keys($this->hierarchy)))) {
+                dd("Assertion error. outputAttributes missing from hierarchy.\n" . Utils::get_var_dump(array_keys($this->hierarchy)));
+            }
+            // var_dump($outputColumn);
+            // var_dump($this->hierarchy);
+
+            // dd($this->hierarchy);
+            // if ($this->hierarchy["outputAttributes"] !== null) {
             if ($recursionLevel === 0) {
                 foreach ($this->hierarchy["outputAttributes"][$recursionLevel] as $oa) {
                     $outputAttributes[] = Attribute::createFromArray($oa);
@@ -425,6 +442,7 @@ class DBFit
                     $outputAttributes[] = Attribute::createFromArray($oa);
                 }
             }
+            // }
         }
 
         $rawDataframe = NULL;
@@ -1133,7 +1151,7 @@ class DBFit
         return $whereClauses;
     }
 
-    
+
 
     /* Create and assign the corresponding attribute(s) to a given column */
     function assignColumnAttributes(array &$column, ?array $raw_data = null, array $recursionPath = [], bool $isOutputAttribute = false, bool $timing = false)
@@ -1181,7 +1199,7 @@ class DBFit
                 $raw_data[0] = (object)$raw_data_array;
             }
         }
-        
+
         switch (true) {
             /* Forcing a set of binary categorical attributes */
             case $this->getColumnTreatmentType($column) == "ForceSet":
@@ -1455,7 +1473,7 @@ class DBFit
      *  - name, id_model, ... (properties of the node)
      *  - id of the father-problem node
      *  - ids of the sub-problems nodes
-     * 
+     *
      * Nodes are indexed by problem name (TODO is this safe? This is done to simplify research)
      * Note that this structure is similar to a double-linked list
      */
@@ -1470,13 +1488,15 @@ class DBFit
         $hierarchyNode["model_id"] = $modelId;
         foreach ($model->getAttributes() as $a)
             $hierarchyNode["attributes"][] =  $a->serializeToArray();
-        
+
         if ($fatherNode === null) {
             /* Case Level 0 */
             /* The name of the father-problem node, in this case it is empty (sons of root node) */
             $hierarchyNode["father_node"] = [];
 
-            assert($recursionLevel == 0);
+            if(!($recursionLevel == 0)) {
+                dd("Assertion error.");
+            }
             $this->hierarchy["hierarchyNodes"][$recursionLevel][$modelName] = $hierarchyNode;
         } else {
             /* Case sub-problem */
