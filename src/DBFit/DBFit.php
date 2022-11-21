@@ -2095,18 +2095,18 @@ class DBFit
             foreach($storedUnactivatedAntecedentsGrouped as $g) {
                 foreach($g as $antecedent) {
                     // Invert antecedente (remember it didn't activate)
-                    if ($antecedent["operator"] == " >= ") {
-                        $antecedent["operator"] = " < ";
-                    } else if ($antecedent["operator"] == " > ") {
-                        $antecedent["operator"] = " <= ";
-                    }else if ($antecedent["operator"] == " <= ") {
-                        $antecedent["operator"] = " > ";
-                    }else if ($antecedent["operator"] == " < ") {
-                        $antecedent["operator"] = " >= ";
-                    }else if ($antecedent["operator"] == " == ") {
-                        $antecedent["operator"] = " != ";
-                    }else if ($antecedent["operator"] == " != ") {
-                        $antecedent["operator"] = " == ";
+                    if ($antecedent["operator"] == ">=") {
+                        $antecedent["operator"] = "<";
+                    } else if ($antecedent["operator"] == ">") {
+                        $antecedent["operator"] = "<=";
+                    }else if ($antecedent["operator"] == "<=") {
+                        $antecedent["operator"] = ">";
+                    }else if ($antecedent["operator"] == "<") {
+                        $antecedent["operator"] = ">=";
+                    }else if ($antecedent["operator"] == "==") {
+                        $antecedent["operator"] = "!=";
+                    }else if ($antecedent["operator"] == "!=") {
+                        $antecedent["operator"] = "==";
                     }
                     $storedUnactivatedAntecedents[] = $antecedent;
                 }
@@ -2135,29 +2135,28 @@ class DBFit
                             array_reduce($antecedents, function ($carry, $item) use ($operator) {
                             if (count($carry) == 0) {
                                 return [$item];
-                            } else if (in_array($operator, [" >= ", " > "])) {
+                            } else if (in_array($operator, [">=", ">"])) {
                                 $new_item = $item;
                                 // error_log(Utils::get_var_dump($carry[0]));
                                 $new_item["value"] = max($carry[0]["value"], $item["value"]);
                                 return [$new_item];
-                            } else if (in_array($operator, [" <= ", " < "])) {
+                            } else if (in_array($operator, ["<=", "<"])) {
                                 $new_item = $item;
                                 // error_log(Utils::get_var_dump($carry[0]));
                                 $new_item["value"] = min($carry[0]["value"], $item["value"]);
                                 return [$new_item];
-                            } else if (in_array($operator, [" == "])) { # Shouldn't happen
-                                // $new_item = $item;
-                                // $new_item["operator"] = " in ";
-                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
-                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                            } else if (in_array($operator, ["=="])) { # Shouldn't happen. If it happens, it's because the item is the same.
+                                $new_item = $item;
+                                // $new_item["operator"] = "in";
+                                // $new_item["value"] = $carry[0]["value"] . ", " . $item["value"];
                                 return [$new_item];
-                            } else if (in_array($operator, [" != "])) { # Shouldn't happen
-                                // $new_item = $item;
-                                // $new_item["operator"] = " not in ";
-                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                            } else if (in_array($operator, ["!="])) {
+                                $new_item = $item;
+                                $new_item["operator"] = "not in";
+                                $new_item["value"] = $carry[0]["value"] . ", " . $item["value"];
                                 // $array_push = $carry[0]["value"];
                                 // $new_item["value"] = [, $item["value"]];
-                                array_push($carry, $item);
+                                // array_push($carry, $item);
                                 return $carry;
                             } else {
                                 Utils::die_error("Uncaught operator value: " . Utils::get_var_dump($operator));
@@ -2166,12 +2165,16 @@ class DBFit
                         }, [])
                     );
                 }
-                // foreach($new_antecedents as $operator => $antecedents) {
-                // }
+                $new_antecedents = array_map(function ($antecedent) {
+                    if ($antecedent["operator"] == "not in") {
+                        $antecedent["value"] = "{" . $antecedent["value"] . "}";
+                    }
+                    $antecedent["operator"] = " " . $antecedent["operator"] . " ";
+                    return $antecedent;
+                }, $new_antecedents);
                 $new_rulesAntecedents = array_merge($new_rulesAntecedents, $new_antecedents);
             }
             $rulesAntecedents = $new_rulesAntecedents;
-            $rulesAntecedents = [$rulesAntecedents];
 
             /* String associated with predicted value */
             $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
@@ -2193,7 +2196,7 @@ class DBFit
                 //     [
                 //         $dataframe->getClassAttribute()->getName(),
                 //         $predictedVal,
-                //         $rulesAntecedents,
+                //         [$rulesAntecedents],
                 //         $ruleMeasures
                 //     ],
                 //     $this->predictByIdentifier($idVal, array_merge($recursionPath, [[$i_prob, $className]]),
@@ -2210,7 +2213,7 @@ class DBFit
                     $prediction["rules"] = [[]];
                 }
                 else {
-                    $prediction["rules"] = $rulesAntecedents;
+                    $prediction["rules"] = [$rulesAntecedents];
                 }
                 $prediction["rule_stats"] = $ruleMeasures;
                 $prediction["subclasses"] = $this->predictByIdentifier(

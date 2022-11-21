@@ -189,10 +189,10 @@ class DiscreteAntecedent extends Antecedent
     function serializeToArray() : array
     {
         return [
-            'feature_id' => $this->getAttribute()->getIndex(),
-            'feature' => $this->attribute->getName(),
-            'operator' => '==',
-            'value' => $this->attribute->reprVal($this->getValue()),
+            "feature_id" => $this->getAttribute()->getIndex(),
+            "feature"    => $this->attribute->getName(),
+            "operator"   => "==",
+            "value"      => $this->attribute->reprVal($this->getValue()),
         ];
     }
 
@@ -236,29 +236,29 @@ class DiscreteAntecedent extends Antecedent
         if ($attributes != null) {
           $domain = null;
           foreach ($attributes as $attribute) {
-            if ($attribute->getName() == $antecedentArray['feature']) {
-              $attribute->setIndex($antecedentArray['feature_id']);
+            if ($attribute->getName() == $antecedentArray["feature"]) {
+              $attribute->setIndex($antecedentArray["feature_id"]);
               $domain = $attribute->getDomain();
               $out_map = array_flip($domain);
               $antecedent = new DiscreteAntecedent($attribute);
               #print_r($out_map);
-              $antecedent->setValue($out_map[$antecedentArray['value']]);
+              $antecedent->setValue($out_map[$antecedentArray["value"]]);
               return $antecedent;
               #break;
             }
           }
           if ($domain === null) {
-            Utils::die_error("Couldn't retrieve domain for attribute " . $antecedentArray['name']
+            Utils::die_error("Couldn't retrieve domain for attribute " . $antecedentArray["name"]
               . "when creating it from array." . PHP_EOL);
           }
           #$out_map = array_flip($domain);
 
-          /*$attribute = new DiscreteAttribute($antecedentArray['feature'], 'parsed',
+          /*$attribute = new DiscreteAttribute($antecedentArray["feature"], 'parsed',
             [strval($domain[0]), strval($domain[1])]);
-          $attribute->setIndex($antecedentArray['feature_id']);
+          $attribute->setIndex($antecedentArray["feature_id"]);
           $antecedent = new DiscreteAntecedent($attribute);*/
           #print_r($out_map); #debug
-          #$antecedent->setValue($out_map[$antecedentArray['value']]); # TODO apparently a problem here
+          #$antecedent->setValue($out_map[$antecedentArray["value"]]); # TODO apparently a problem here
           #return $antecedent;
         }
         else {

@@ -238,13 +238,13 @@ class ContinuousAntecedent extends Antecedent
     {
       $sign_str = null;
       if ($this->value == 0)
-        $sign_str = " <= ";
+        $sign_str = "<=";
       else if ($this->value == 1)
-        $sign_str = " >= ";
+        $sign_str = ">=";
       else if ($this->value == 2)
-        $sign_str = " > ";
+        $sign_str = ">";
       else if ($this->value == 3)
-        $sign_str = " < ";
+        $sign_str = "<";
       else
         Utils::die_error("Unexpected error when creating a continuous antecedent from string." . PHP_EOL);
       return $sign_str;
@@ -255,7 +255,7 @@ class ContinuousAntecedent extends Antecedent
      */
     function toString(bool $short = false) : string
     {
-        $sign_str = $this->getSignString();
+        $sign_str = " " . $this->getSignString() . " ";
 
         if ($short) {
             return "{$this->attribute->getName()}" . $sign_str .
@@ -304,10 +304,10 @@ class ContinuousAntecedent extends Antecedent
       $sign_str = $this->getSignString();
 
       return [
-        'feature_id' => $this->getAttribute()->getIndex(),
-        'feature' => $this->attribute->getName(),
-        'operator' => $sign_str,
-        'value' => $this->getsplitPoint()
+        "feature_id" => $this->getAttribute()->getIndex(),
+        "feature"    => $this->attribute->getName(),
+        "operator"   => $sign_str,
+        "value"      => $this->getsplitPoint()
       ];
     }
 
@@ -359,10 +359,10 @@ class ContinuousAntecedent extends Antecedent
      */
     public static function createFromArray(array $antecedentArray, ?array $attributes = null) : ContinuousAntecedent
     {
-        $attribute = new ContinuousAttribute($antecedentArray['feature'], 'parsed');
-        $attribute->setIndex($antecedentArray['feature_id']);
+        $attribute = new ContinuousAttribute($antecedentArray["feature"], 'parsed');
+        $attribute->setIndex($antecedentArray["feature_id"]);
         $antecedent = new ContinuousAntecedent($attribute);
-        $sign_str = $antecedentArray['operator'];
+        $sign_str = $antecedentArray["operator"];
         if ($sign_str == " <= ")
             $antecedent->setValue(0);
         else if ($sign_str == " >= ")
@@ -373,8 +373,8 @@ class ContinuousAntecedent extends Antecedent
             $antecedent->setValue(3);
         else
             Utils::die_error("Unexpected error when creating a continuous antecedent from array." . PHP_EOL
-            . $antecedentArray['feature'] . $sign_str . $antecedentArray['value'] . PHP_EOL);
-        $antecedent->setSplitPoint($antecedentArray['value']);
+            . $antecedentArray["feature"] . $sign_str . $antecedentArray["value"] . PHP_EOL);
+        $antecedent->setSplitPoint($antecedentArray["value"]);
         return $antecedent;
     }
 }
