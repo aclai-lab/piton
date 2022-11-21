@@ -412,12 +412,14 @@ class DBFit
             if ($outputAttributes !== null) {
                 if ($recursionLevel === 0) {
                     // print_r($outputAttributes);
-                    foreach ($outputAttributes as $oa)
-                        $this->hierarchy["outputAttributes"][$recursionLevel][] = $oa->serializeToArray();
+                    $this->hierarchy["outputAttributes"][$recursionLevel] = array_map(function ($oa) {
+                        return $oa->serializeToArray();
+                    }, $outputAttributes);
                 }
                 else {
-                    foreach ($outputAttributes as $oa)
-                        $this->hierarchy["outputAttributes"][$recursionLevel][$recursionPath[0][1]][] = $oa->serializeToArray();
+                    $this->hierarchy["outputAttributes"][$recursionLevel][$recursionPath[0][1]] = array_map(function ($oa) {
+                        return $oa->serializeToArray();
+                    }, $outputAttributes);
                 }
             }
             // else {
@@ -438,14 +440,14 @@ class DBFit
             // if ($this->hierarchy["outputAttributes"] !== null) {
             // print_r($this->hierarchy);
             if ($recursionLevel === 0) {
-                foreach ($this->hierarchy["outputAttributes"][$recursionLevel] as $oa) {
-                    $outputAttributes[] = Attribute::createFromArray($oa);
-                }
+                $outputAttributes = array_map(function ($oa) {
+                    return Attribute::createFromArray($oa);
+                }, $this->hierarchy["outputAttributes"][$recursionLevel]);
             }
             else {
-                foreach ($this->hierarchy["outputAttributes"][$recursionLevel][$recursionPath[0][1]] as $oa) {
-                    $outputAttributes[] = Attribute::createFromArray($oa);
-                }
+                $outputAttributes = array_map(function ($oa) {
+                    return Attribute::createFromArray($oa);
+                }, $this->hierarchy["outputAttributes"][$recursionLevel][$recursionPath[0][1]]);
             }
             // }
         }
@@ -476,32 +478,41 @@ class DBFit
             }
 
             /* Recompute and obtain input attributes in order to profit from attributes that are more specific to the current recursionPath. */
-            foreach ($this->inputColumns as &$column) {
-                if ($idVal === NULL) {
+            $inputAttributes = [];
+            if ($idVal === NULL) {
+                foreach ($this->inputColumns as &$column) {
                     $this->assignColumnAttributes($column, null, $recursionPath, false, $timing);
-                    $inputAttributes = [];
-                    foreach ($this->inputColumns as &$column) {
-                        if (in_array($this->getColumnName($column), $columnsToIgnore)) {
-                            $attribute = NULL;
-                        } else {
-                            $attribute = $this->getColumnAttributes($column, $recursionPath);
-                        }
-                        $inputAttributes[] = $attribute;
+                    if (in_array($this->getColumnName($column), $columnsToIgnore)) {
+                        $attribute = NULL;
+                    } else {
+                        $attribute = $this->getColumnAttributes($column, $recursionPath);
                     }
+                    $inputAttributes[] = $attribute;
+                }
+            }
+            else {
+                if ($recursionLevel === 0) {
+                    $k = array_key_first($this->hierarchy["hierarchyNodes"][0]);
+                    foreach ($this->hierarchy["hierarchyNodes"][0][$k]["attributes"] as $a) {
+                        $inputAttributes[] = Attribute::createFromArray($a);
+                    }
+                    // $inputAttributes = array_map(function ($a) {
+                    //     return Attribute::createFromArray($a);
+                    // }, $this->hierarchy["hierarchyNodes"][0][$k]["attributes"]);
+                    // $inputAttributes[] = $inputAttributes;
                 }
                 else {
-                    if ($recursionLevel === 0) {
-                        $k = array_key_first($this->hierarchy["hierarchyNodes"][0]);
-                        foreach ($this->hierarchy["hierarchyNodes"][0][$k]["attributes"] as $a) {
-                            $inputAttributes[] = Attribute::createFromArray($a);
-                        }
+                    $k = array_key_first($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]]);
+                    foreach ($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"] as $a) {
+                        $inputAttributes[] = Attribute::createFromArray($a);
                     }
-                    else {
-                        $k = array_key_first($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]]);
-                        foreach ($this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"] as $a) {
-                            $inputAttributes[] = Attribute::createFromArray($a);
-                        }
-                    }
+                    // $inputAttributes = array_map(function ($a) {
+                    //     return Attribute::createFromArray($a);
+                    // }, $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"]);
+                    // $inputAttributes[] = $inputAttributes;
+                }
+
+                foreach ($this->inputColumns as &$column) {
                     $raw_data = $this->assignColumnAttributes($column, $raw_data, $recursionPath, false, $timing);
                 }
             }
@@ -511,13 +522,43 @@ class DBFit
                     $attributes = $this->hierarchy["hierarchyNodes"][0][$k]["attributes"];
                 else
                     $attributes = $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"];
-                array_shift($attributes);
+
+                // dd(array_map(function ($attr) {
+                //         return $attr;
+                //     }, $attributes));
+                // dd(count($attributes));
+
+                $outputAttributesNames = array_map(function ($attr) {
+                    return $attr->getName();
+                }, $outputAttributes);
+
+                $new_attributes = [];
+                foreach ($attributes as $i => $attr) {
+                    if (!in_array($attr["name"], $outputAttributesNames)) {
+                        $new_attributes[] = $attr;
+                    }
+                }
+                $attributes = $new_attributes;
+
+                // array_shift($attributes);
+                // dd(array_map(function ($attr) {
+                //         return $attr;
+                //     }, $attributes));
+                // dd(array_keys($attributes), count($attributes));
+
                 foreach ($attributes as $i => $a)
                     $attributes[$i] = Attribute::CreateFromArray($a);
 
                 $inst = array_values((array)$raw_data[0]);
+
+                // dd(array_map(function ($i) {
+                //         return $i;
+                //     }, $inst));
+                // dd(count($inst));
+
                 array_shift($inst);
 
+                // dd(count($inst));
                 /* Get representation fonr Discrete Attributes */
                 foreach ($attributes as $i => &$a) {
                     if ($a instanceof DiscreteAttribute) {
@@ -539,11 +580,25 @@ class DBFit
                 /* Add output attributes */
                 $attributes = array_merge($outputAttributes, $attributes);
 
+                // dd(array_map(function ($attr) {
+                //         return $attr->getName();
+                //     }, $attributes));
+
                 foreach ($outputAttributes as $oa) {
                     array_unshift($inst, 0);
                 }
+
                 
-                $data[0] = $attributes;
+                $final_attributes = [];
+                foreach ($attributes as $attr) {
+                    $final_attributes[$attr->getName()] = $attr;
+                }
+
+                // dd(array_map(function ($attr) {
+                //         return $attr->getName();
+                //     }, $final_attributes));
+
+                $data[0] = $final_attributes;
                 $data[1][$idVal] = $inst;
                 $data[2] = $outputAttributes;
 
@@ -553,6 +608,8 @@ class DBFit
             }
             else {
                 $attributes = array_merge([$outputAttributes], $inputAttributes);
+                // dd($inputAttributes);
+                // dd($attributes);
             }
             $columns = array_merge([$outputColumn], $this->inputColumns);
 
@@ -561,11 +618,11 @@ class DBFit
                 foreach ($attributes as $i_col => $attrs) {
                     if ($attrs === NULL) {
                         echo "[$i_col]: " . Utils::toString($attrs) . PHP_EOL;
-                    } else if (count($attrs) > 1) {
+                    } else if (count($attrs) >= 1) {
                         foreach ($attrs as $i => $attr)
                             echo "[$i_col], $i/" . count($attrs) . ": " . $attr->toString() . PHP_EOL;
-                    } else if (count($attrs) == 1) {
-                        echo "[$i_col]: " . $attrs[0]->toString() . PHP_EOL;
+                    // } else if (count($attrs) == 1) {
+                    //     echo "[$i_col]: " . $attrs[array_key_first($attrs)]->toString() . PHP_EOL;
                     } else {
                         echo "[$i_col]: " . Utils::toString($attrs) . PHP_EOL;
                     }
@@ -605,14 +662,15 @@ class DBFit
                 } else if (is_array($attribute)) {
                     // Unpack attributes
                     foreach ($attribute as $attr) {
-                        $final_attributes[] = $attr;
+                        // $final_attributes[$attr["name"]] = $attr;
+                        $final_attributes[$attr->getName()] = $attr;
                     }
                 } else {
                     Utils::die_error("Unknown attribute encountered. Must debug code. "
                         . Utils::get_var_dump($attribute));
                 }
             }
-
+            // dd($final_attributes);
             $rawDataframe = [$final_attributes, $final_data, $outputAttributes];
             $numDataframes = count($outputAttributes);
         }
@@ -628,12 +686,18 @@ class DBFit
         /* Generate many dataframes, each with a single output attribute (one per each of the output attributes fore this column) */
         list($final_attributes, $final_data, $outputAttributes) = $rawDataframe;
         $numOutputAttributes = count($outputAttributes);
+
         // echo "Output attributes: "; var_dump($outputAttributes);
         foreach ($outputAttributes as $i_prob => $outputAttribute) {
-            // echo "Problem $i_prob/" . $numOutputAttributes . PHP_EOL;
+
+            // echo "Problem $i_prob/" . $numOutputAttributes . ": \"${outputAttribute->getName()}\"" . PHP_EOL;
 
             /* Build instances for this output attribute */
-            $outputAttr = clone $final_attributes[$i_prob];
+            // dd(array_keys($final_attributes));
+            // dd($outputAttribute->getName());
+            // dd($final_attributes[0]);
+            // dd($final_attributes[1]);
+            $outputAttr = clone $final_attributes[$outputAttribute->getName()];
             $inputAttrs = array_map("aclai\\piton\\Utils::clone_object", array_slice($final_attributes, $numOutputAttributes));
 
 
@@ -657,12 +721,28 @@ class DBFit
                       ->update(["attributes" => json_encode($serializedAttributes)]);
                 }
             }*/
-
+            // dd($final_data, $outputAttribute->getName());
+            // dd(array_keys($final_data[9]));
+            // dd(($final_data[9][0]));
             $outputVals = Utils::array_column_assoc($final_data, $i_prob);
             $attrs = array_merge([$outputAttr], $inputAttrs);
+            // dd(count($inputAttrs));
+            // dd(array_keys($attrs));
+            $attrs = array_values($attrs);
+            // dd($outputVals[9]);
+            // dd(count($outputVals));
+            // dd(count($attrs));
+            // dd(array_map(function ($attr) {
+            //         return $attr->getName();
+            //     }, $attrs));
+            // dd(($attrs));
             $data = [];
             foreach ($final_data as $instance_id => $row) {
+                // dd(array_slice($row, $numOutputAttributes));
+                // dd(count($row), count(array_slice($row, $numOutputAttributes)));
                 $data[$instance_id] = array_merge([$outputVals[$instance_id]], array_slice($row, $numOutputAttributes));
+                // dd($data[$instance_id]);
+                // dd(count($data[$instance_id]));
             }
 
             $dataframe = new Instances($attrs, $data);
@@ -701,6 +781,14 @@ class DBFit
         // var_dump($attributes[1][0]);
         // var_dump($columns);
 
+        // dd($attributes);
+        // dd(get_object_vars($raw_data[array_key_first($raw_data)]));
+        // dd($this->getColNickname($this->identifierColumnName));
+        // dd(($raw_data[array_key_first($raw_data)]));
+        // dd(Utils::array_column_assoc($raw_data, "X111785cf034bc7b57dd4e72b6f95ac79"));
+        // dd(count($columns));
+        // dd(count($attributes));
+
         $data = [];
 
         /** For each data row... */
@@ -712,6 +800,7 @@ class DBFit
             $attr_vals = [];
             foreach ($columns as $i_col => &$column) {
                 $attribute = $attributes[$i_col];
+                $attribute = array_values($attribute);
 
                 if ($attribute === NULL) {
                     // Ignore column
@@ -800,7 +889,7 @@ class DBFit
                                         . $this->getColumnName($column)
                                         . " ($i_col)" . Utils::get_var_dump($attribute));
                                 }
-                                $attribute = $attribute[0];
+                                $attribute = $attribute[array_key_first($attribute)];
 
                                 /* For categorical attributes, use the class index as value */
                                 if ($attribute instanceof DiscreteAttribute) {
@@ -896,7 +985,9 @@ class DBFit
                                 . "Suggestion: explicitly ask to ignore this column."
                             );
                         }
+                        // Just to be sure:
                         $attribute = $attributes[$i_col];
+                        $attribute = array_values($attribute);
                         if (is_array($attr_vals_orig[$i_col])) {
                             foreach (Utils::zip($z[0], $z[1]) as $a => $val) {
                                 /* Only merging bool values by means of boolean-ORs is allowed */
@@ -1204,7 +1295,7 @@ class DBFit
                     unset($allAttributes[$i]);
                     # Note: class attributes go last
                     $allAttributes[] = $outputAttribute;
-                    $attributes[] = $this->convertToRealAttribute($outputAttribute);
+                    $attributes[] = Attribute::createFromArray($outputAttribute);
                     var_dump($attributes);
                 }
                 // dd($allAttributes);
@@ -1485,8 +1576,14 @@ class DBFit
                 . $this->getColumnName($column) . "') can't be empty: " . Utils::get_var_dump($attributes) . PHP_EOL . Utils::get_var_dump($column) . PHP_EOL);
         }
 
+        // $attributes_assoc = [];
+        // foreach ($attributes as $attr) {
+        //     $attributes_assoc[$attr->getName()] = $attr;
+        // }
+
         /* Each column has a tree of attributes, because the set of attributes for the column depends on the recursion path. This is done in order to leverage predicates that are the most specific.  */
         $this->setColumnAttributes($column, $recursionPath, $attributes);
+        // $this->setColumnAttributes($column, $recursionPath, $attributes_assoc);
 
         if ($raw_data !== null) {
             return $raw_data;
@@ -1635,8 +1732,8 @@ class DBFit
             }*/
 
             /* Train */
-            $model_name = $this->getModelName($recursionPath, $i_prob);
-            //$model_id = $this->getModelName($recursionPath, $i_prob, true);
+            $model_name = $this->getModelName($recursionPath, $outputAttribute->getName());
+            //$model_id = $this->getModelName($recursionPath, $outputAttribute->getName(), true);
             $model = $this->learner->initModel();
 
             $model->fit($trainData, $this->learner);
@@ -1665,9 +1762,9 @@ class DBFit
             //$model->dumpToDB($this->outputDB, $model_id);
             // . "_" . join("", array_map([$this, "getColumnName"], ...).);
 
-            $this->setHierarchyModel($recursionPath, $i_prob, clone $model);
-            $prob_name = $this->getHierarchyName($recursionPath, $i_prob);
-            $subRecursionPath = array_merge($recursionPath, [[$i_prob, $prob_name]]);
+            $this->setHierarchyModel($recursionPath, $outputAttribute->getName(), clone $model);
+            $prob_name = $this->getHierarchyName($recursionPath, $outputAttribute->getName());
+            $subRecursionPath = array_merge($recursionPath, [[$outputAttribute->getName(), $prob_name]]);
 
             /* Test */
             /** TODO Not working with sklearn :( */
@@ -1709,7 +1806,7 @@ class DBFit
                         echo "Recursion on class '$className' for attribute \""
                             . $outputAttribute->getName() . "\". " . PHP_EOL;
                         // TODO generalize this. For each level we have a problem A, subproblems B,C,D. E dunque A/B, A/C, etc. For each subproblem we have a certain number of classes, like A/B/B, A/B/NO_B for the binary case.
-                        $childPaths[] = array_merge($recursionPath, [[$i_prob, $className, $outputAttribute->getName()]]);
+                        $childPaths[] = array_merge($recursionPath, [[$outputAttribute->getName(), $className, $outputAttribute->getName()]]);
                     }
                 }
             }
@@ -1922,7 +2019,7 @@ class DBFit
             }
 
             /* Retrieve model */
-            $model_name = $this->getModelName($recursionPath, $i_prob);
+            $model_name = $this->getModelName($recursionPath, $dataframe->getClassAttribute()->getName());
             if (Utils::startsWith($model_name, "_")) {
               $model_name = mb_substr($model_name, 1);
             }
@@ -2118,7 +2215,7 @@ class DBFit
                 $prediction["rule_stats"] = $ruleMeasures;
                 $prediction["subclasses"] = $this->predictByIdentifier(
                     $idVal,
-                    array_merge($recursionPath, [[$i_prob, $predictedStringVal]]),
+                    array_merge($recursionPath, [[$dataframe->getClassAttribute()->getName(), $predictedStringVal]]),
                     $idModelVersion,
                     $log,
                     $timing
@@ -2677,17 +2774,17 @@ class DBFit
     }
 
     /* TODO explain */
-    function getModelName(array $recursionPath, ?int $i_prob, $short = false): string
+    function getModelName(array $recursionPath, ?string $prob_name, $short = false): string
     {
         // var_dump($recursionPath);
         // var_dump($this->hierarchy);
         // var_dump($this->hierarchy["hierarchyNodes"]);
         $recursionLevel = count($recursionPath);
         if (!$short) {
-            if ($i_prob !== NULL) {
+            if ($prob_name !== NULL) {
                 // // var_dump($recursionPath);
                 // // dd($this->outputColumns);
-                // // dd($this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$i_prob]]["attributes"][0]["name"]name);
+                // // dd($this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$prob_name]]["attributes"][0]["name"]name);
                 // // dd(array_keys($this->hierarchy["hierarchyNodes"][$recursionLevel]));
                 // dd($this->outputColumns[$recursionLevel]);
                 // dd($this->outputColumns[$recursionLevel]["attributes"]);
@@ -2696,24 +2793,31 @@ class DBFit
                 // // // dd($this->outputColumns);
                 // // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath));
                 // $k = array_keys($this->hierarchy["hierarchyNodes"][$recursionLevel]);
-                // $attribute_name = $this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$i_prob]]["attributes"][0]["name"];
+                // $attribute_name = $this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$prob_name]]["attributes"][0]["name"];
                 if (true) {
                     $tmp = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath);
-                    if ($tmp[0]->getName() != "Terapia_Calcio supplementazione" && $i_prob != 0) {
-                        // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName());
-                        // dd($i_prob);
+                    if ($tmp[0]->getName() != "Terapia_Calcio supplementazione" && $prob_name != 0) {
+                        // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$prob_name]->getName());
+                        // dd($prob_name);
+                        dd("aoeu");
                         dd($tmp);
                     }
+                    // TODO: $attribute_name = $prob_name;
                 }
-                $attribute_name = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$i_prob]->getName();
+                // dd(($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)));
+                // dd(array_keys($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)));
+                $attribute_name = $prob_name;
+                // foreach ($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath) as $attr) {
+                //     $attr->getName() == $prob_name;...
+                // }
                 $currentLevelStr = str_replace(".", ".", $attribute_name);
                 $out = str_replace("/", ".", $currentLevelStr);
             } else {
                 $out = "";
             }
         } else {
-            if ($i_prob !== NULL) {
-              $out = strval($i_prob);
+            if ($prob_name !== NULL) {
+              $out = strval($prob_name);
             } else {
                 $out = "";
             }
@@ -3110,7 +3214,7 @@ class DBFit
         return $cols;
     }
 
-    private function setHierarchyModel(array $recursionPath, int $i_prob, DiscriminativeModel $model)
+    private function setHierarchyModel(array $recursionPath, string $prob_name, DiscriminativeModel $model)
     {
         $name = "";
         $modelKeyPath = [];
@@ -3123,13 +3227,14 @@ class DBFit
             // $node[1]
         }
         $modelKeyPath[] = "subtree";
-        $modelKeyPath[] = $i_prob;
+        $modelKeyPath[] = $prob_name;
 
         $recursionLevel = count($recursionPath);
-        $name .= $this->getColumnAttributes($this->outputColumns[$recursionLevel],
-            $recursionPath)[$i_prob]->getName();
+        $name .= $prob_name;
+        // $name .= $this->getColumnAttributes($this->outputColumns[$recursionLevel],
+        //     $recursionPath)[$prob_name]->getName();
 
-        $subRecursionPath = array_merge($recursionPath, [[$i_prob, $name]]);
+        $subRecursionPath = array_merge($recursionPath, [[$prob_name, $name]]);
 
         $node = [
             "name" => $name,
@@ -3143,7 +3248,7 @@ class DBFit
         // echo get_var_dump($this->models);
     }
 
-    private function getHierarchyModel(array $recursionPath, int $i_prob): ?DiscriminativeModel
+    private function getHierarchyModel(array $recursionPath, string $prob_name): ?DiscriminativeModel
     {
         $modelKeyPath = [];
         foreach ($recursionPath as $recursionLevel => $node) {
@@ -3151,14 +3256,14 @@ class DBFit
             $modelKeyPath[] = $node[0];
         }
         $modelKeyPath[] = "subtree";
-        $modelKeyPath[] = $i_prob;
+        $modelKeyPath[] = $prob_name;
         $modelKeyPath[] = "model";
 
         return Utils::arr_get_value($this->models, $modelKeyPath, true);
     }
 
-    //private function getHierarchyName(array $recursionPath, int $i_prob) : string {
-    private function getHierarchyName(array $recursionPath, int $i_prob)
+    //private function getHierarchyName(array $recursionPath, string $prob_name) : string {
+    private function getHierarchyName(array $recursionPath, string $prob_name)
     {
         $modelKeyPath = [];
         foreach ($recursionPath as $recursionLevel => $node) {
@@ -3166,7 +3271,7 @@ class DBFit
             $modelKeyPath[] = $node[0];
         }
         $modelKeyPath[] = "subtree";
-        $modelKeyPath[] = $i_prob;
+        $modelKeyPath[] = $prob_name;
         $modelKeyPath[] = "name";
 
         return Utils::arr_get_value($this->models, $modelKeyPath, true);
@@ -3235,15 +3340,6 @@ class DBFit
         }
         return $attributes;
     }
-
-  /** Ugly patch */
-  public function convertToRealAttribute(array $attribute) : Attribute
-  {
-    if (!($attribute["type"] == "bool")) {
-        dd("Unknown attribute type in convertToRealAttribute: '${attribute["type"]}' .");
-    }
-    return new DiscreteAttribute($attribute["name"], "enum", $attribute["domain"]);
-  }
 
   /** Functions to get information about the problem. */
   public function getInputTables() : array

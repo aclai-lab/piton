@@ -125,10 +125,8 @@ class DiscreteAttribute extends Attribute {
      */
     public static function createFromArray(array $attributeArray) : DiscreteAttribute
     {
-      $attribute = new DiscreteAttribute($attributeArray['name'], $attributeArray['type']);
+      $attribute = new DiscreteAttribute($attributeArray['name'], $attributeArray['type'], $attributeArray["domain"]);
       //$attribute->setIndex($attributeArray['index']);
-      $domain = $attributeArray['domain'];
-      $attribute->setDomain($domain);
       return $attribute;
     }
 }

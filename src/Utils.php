@@ -23,7 +23,8 @@ class Utils
         if ($msg === NULL) {
             $msg = "An error occurred.";
         }
-        die("<b>ERROR!</b> " . $msg);
+        // die("<b>ERROR!</b> " . $msg);
+        dd("ERROR! " . $msg);
     }
 
     public function warn($msg)
