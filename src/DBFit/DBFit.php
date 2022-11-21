@@ -1175,7 +1175,7 @@ class DBFit
                     $attributes[] = $v;
                 }
                 if ($recursionLevel === 0)
-                    $this->hierarchy["hierarchyNodes"][0][$k]["attributes"] = array_values($attributes);
+                    $this->hierarchy["hierarchyNodes"][$recursionLevel][$k]["attributes"] = array_values($attributes);
                 else
                     $this->hierarchy["hierarchyNodes"][$recursionLevel][$recursionPath[0][1]][$k]["attributes"] = array_values($attributes);
                 $raw_data[0] = (object)$raw_data_array;
@@ -1476,7 +1476,8 @@ class DBFit
             /* The name of the father-problem node, in this case it is empty (sons of root node) */
             $hierarchyNode["father_node"] = [];
 
-            $this->hierarchy["hierarchyNodes"][0][$modelName] = $hierarchyNode;
+            assert($recursionLevel == 0);
+            $this->hierarchy["hierarchyNodes"][$recursionLevel][$modelName] = $hierarchyNode;
         } else {
             /* Case sub-problem */
             /* The name of the father-problem node */
@@ -2534,6 +2535,9 @@ class DBFit
     /* TODO explain */
     function getModelName(array $recursionPath, ?int $i_prob, $short = false): string
     {
+        // var_dump($recursionPath);
+        // var_dump($this->hierarchy);
+        // var_dump($this->hierarchy["hierarchyNodes"]);
         $recursionLevel = count($recursionPath);
         if (!$short) {
             if ($i_prob !== NULL) {
