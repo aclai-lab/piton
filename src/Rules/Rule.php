@@ -4,6 +4,7 @@ namespace aclai\piton\Rules;
 
 use aclai\piton\Instances\Instances;
 use aclai\piton\Attributes\Attribute;
+use aclai\piton\Facades\Utils;
 
 /**
  * A single rule that predicts a specified value.
@@ -18,7 +19,7 @@ abstract class Rule
     /** The vector of antecedents of this rule */
     protected $antecedents;
 
-    /** The measures for the rules. Can be empty if not computed. */
+    /** The measures for the rule. Can be empty if not computed. */
     protected $ruleMeasures;
 
     /** Constructor */
@@ -68,6 +69,15 @@ abstract class Rule
         return true;
     }
 
+    function coverage(Instances &$data, int $instance_id): array
+    {
+        $covers = [];
+        foreach ($this->antecedents as $antd) {
+            $covers[] = $antd->covers($data, $instance_id);
+        }
+        return $covers;
+    }
+
     function coversAll(Instances &$data): bool
     {
         foreach ($data->iterateInsts() as $instance_id => $inst) {
@@ -76,6 +86,23 @@ abstract class Rule
             }
         }
         return true;
+    }
+
+    function getNonCoveringSubRule(Instances &$data, int $instance_id, array $coverage): Rule
+    {
+        $rule_classname = get_class($this);
+        $new_rule = new ClassificationRule($this->consequent);
+        $nc_antecedents = [];
+        foreach (Utils::zip($coverage, $this->antecedents) as $i => $z) {
+            $covers = $z[0];
+            $antd = $z[1];
+            if (!$covers) {
+                $nc_antecedents[$i] = $antd;
+            }
+        }
+        $new_rule->setAntecedents($nc_antecedents);
+        // return new $rule_classname($this->consequent, $nc_antecedents);
+        return $new_rule;
     }
 
     /**

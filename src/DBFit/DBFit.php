@@ -174,10 +174,12 @@ class DBFit
     private $limit;
 
     /* An identifier column, used for
-      - sql-based prediction
+      - SQL-based prediction
       - a correct retrieval step of prediction results
       Furthermore, a value for the identifier column identifies a set of data rows that are to be
-        compressed into a single data instance before use. TODO explain better this important point.
+        compressed into a single data instance before use; rows with the same value for the
+        identifierColumnName are squashed into a single line, so that the identifierColumnName
+        effectively induces a dataset of rows that have different values for identifierColumnName.
     */
     private $identifierColumnName;
 
@@ -432,6 +434,7 @@ class DBFit
 
             // dd($this->hierarchy);
             // if ($this->hierarchy["outputAttributes"] !== null) {
+            // print_r($this->hierarchy);
             if ($recursionLevel === 0) {
                 foreach ($this->hierarchy["outputAttributes"][$recursionLevel] as $oa) {
                     $outputAttributes[] = Attribute::createFromArray($oa);
@@ -1061,9 +1064,9 @@ class DBFit
             /* Query database */
             // echo $sql . PHP_EOL;
             // die();
-            // if (!$silent) {
-            //     echo "SQL:" . PHP_EOL . $sql . PHP_EOL;
-            // }
+            if (!$silent) {
+                echo "SQL:" . PHP_EOL . $sql . PHP_EOL;
+            }
             //$raw_data = mysql_select($this->inputDB, $sql, $silent);
             $raw_data = DB::select(DB::raw($sql));
             return $raw_data;
@@ -1582,7 +1585,7 @@ class DBFit
                 continue;
             }
 
-            //$dataframe->saveToCSV("datasets/data-" . $this->getModelName($recursionPath, $i_prob) . ".csv");
+            // $dataframe->saveToCSV("datasets/data-" . $this->getModelName($recursionPath, $i_prob) . ".csv");
             //$dataframe->save_ARFF("datasets/arff/data-" . $this->getModelName($recursionPath, $i_prob) . ".arff");
             //$dataframe->saveToDB($this->getTableNickname("data-" . $this->getModelName($recursionPath, $i_prob)));
 
@@ -1946,17 +1949,108 @@ class DBFit
             /**
              * I want the antecedents to have a more similar format to the json one in the database.
              * Remember: just the last array of antecedents, in fact, contains the activated rule.
-             * But for not normalized models, we want to keep track of the rules encountered before
+             * But for un-normalized models, we want to keep track of the rules encountered before
              * its activation which haven't been activated.
              */
             $rulesAntecedents = [];
             foreach ($storedRules as $sr => $storedRule) {
+                $rulesAntecedents[$sr] = [];
                 /* I actually just need to store the antecedents. */
                 $ruleAntecedents = $storedRule->getAntecedents();
+                // error_log(Utils::get_var_dump($ruleAntecedents));
                 foreach ($ruleAntecedents as $ra => $ruleAntecedent) {
                     $rulesAntecedents[$sr][$ra] =  $ruleAntecedent->serializeToArray();
                 }
+                // error_log(Utils::get_var_dump($rulesAntecedents));
             }
+
+            /*
+             * Clean rules aggregation
+             */
+            $storedActivatedAntecedents = end($rulesAntecedents);
+            $storedUnactivatedAntecedentsGrouped = array_slice($rulesAntecedents, 0, -1);
+            // error_log(Utils::get_var_dump($storedUnactivatedAntecedentsGrouped));
+            $storedUnactivatedAntecedents = [];
+            foreach($storedUnactivatedAntecedentsGrouped as $g) {
+                foreach($g as $antecedent) {
+                    // Invert antecedente (remember it didn't activate)
+                    if ($antecedent["operator"] == " >= ") {
+                        $antecedent["operator"] = " < ";
+                    } else if ($antecedent["operator"] == " > ") {
+                        $antecedent["operator"] = " <= ";
+                    }else if ($antecedent["operator"] == " <= ") {
+                        $antecedent["operator"] = " > ";
+                    }else if ($antecedent["operator"] == " < ") {
+                        $antecedent["operator"] = " >= ";
+                    }else if ($antecedent["operator"] == " == ") {
+                        $antecedent["operator"] = " != ";
+                    }else if ($antecedent["operator"] == " != ") {
+                        $antecedent["operator"] = " == ";
+                    }
+                    $storedUnactivatedAntecedents[] = $antecedent;
+                }
+            }
+
+            $rulesAntecedents = array_merge($storedUnactivatedAntecedents, $storedActivatedAntecedents);
+            $rulesAntecedents = array_unique($rulesAntecedents, SORT_REGULAR);
+            $by_feature = [];
+
+            foreach($rulesAntecedents as $feature => $antecedent) {
+                $by_feature[$antecedent["feature"]][] = $antecedent;
+            }
+
+            // error_log(Utils::get_var_dump($storedUnactivatedAntecedents));
+            $new_rulesAntecedents = [];
+            foreach($by_feature as $feature => $antecedents) {
+                $by_operator = [];
+                foreach($antecedents as $antecedent) {
+                    $by_operator[$antecedent["operator"]][] = $antecedent;
+                }
+                error_log(Utils::get_var_dump($by_operator));
+
+                $new_antecedents = [];
+                foreach($by_operator as $operator => $antecedents) {
+                    $new_antecedents = array_merge($new_antecedents,
+                            array_reduce($antecedents, function ($carry, $item) use ($operator) {
+                            if (count($carry) == 0) {
+                                return [$item];
+                            } else if (in_array($operator, [" >= ", " > "])) {
+                                $new_item = $item;
+                                // error_log(Utils::get_var_dump($carry[0]));
+                                $new_item["value"] = max($carry[0]["value"], $item["value"]);
+                                return [$new_item];
+                            } else if (in_array($operator, [" <= ", " < "])) {
+                                $new_item = $item;
+                                // error_log(Utils::get_var_dump($carry[0]));
+                                $new_item["value"] = min($carry[0]["value"], $item["value"]);
+                                return [$new_item];
+                            } else if (in_array($operator, [" == "])) { # Shouldn't happen
+                                // $new_item = $item;
+                                // $new_item["operator"] = " in ";
+                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                                return [$new_item];
+                            } else if (in_array($operator, [" != "])) { # Shouldn't happen
+                                // $new_item = $item;
+                                // $new_item["operator"] = " not in ";
+                                // $new_item["value"] = "[" . $carry[0]["value"] . ", " . $item["value"] . "]";
+                                // $array_push = $carry[0]["value"];
+                                // $new_item["value"] = [, $item["value"]];
+                                array_push($carry, $item);
+                                return $carry;
+                            } else {
+                                Utils::die_error("Uncaught operator value: " . Utils::get_var_dump($operator));
+                                return [];
+                            }
+                        }, [])
+                    );
+                }
+                // foreach($new_antecedents as $operator => $antecedents) {
+                // }
+                $new_rulesAntecedents = array_merge($new_rulesAntecedents, $new_antecedents);
+            }
+            $rulesAntecedents = $new_rulesAntecedents;
+            $rulesAntecedents = [$rulesAntecedents];
 
             /* String associated with predicted value */
             $predictedStringVal = $model->getClassAttribute()->getDomain()[$predictedVal];
@@ -1964,6 +2058,10 @@ class DBFit
             /* Recursive step: recurse and predict the subtree of this predicted value */
             // TODO right now I'm not recurring when a "NO_" outcome happens. This is not supersafe, there must be a nice generalization.
             
+            // error_log($dataframe->numInstances());
+            // error_log($dataframe->toString());
+            // error_log($model);
+
             //Update: not if class name, but if value starts with no_
             if (!Utils::startsWith($predictedStringVal, "NO_")) {
             
@@ -2001,6 +2099,7 @@ class DBFit
                     $log,
                     $timing
                 );
+
                 $predictions[] = $prediction;
             }
         }

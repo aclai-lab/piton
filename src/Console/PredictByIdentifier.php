@@ -43,7 +43,7 @@ class PredictByIdentifier extends Command
      *
      * @var int
      */
-    // $idVal = $this->argument('idVal');
+    $idVal = $this->argument('idVal');
     // $idVal = $this->ask('Instance on which predict');
     /* Warn: this is just for trying stuff, because phpunit doesn't read config file and it's too big to replicate. */
     $db_fit = new DBFit();
