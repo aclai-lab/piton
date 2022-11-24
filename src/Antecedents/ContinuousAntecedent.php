@@ -238,13 +238,13 @@ class ContinuousAntecedent extends Antecedent
     {
       $sign_str = null;
       if ($this->value == 0)
-        $sign_str = "<=";
+        $sign_str = " <= ";
       else if ($this->value == 1)
-        $sign_str = ">=";
+        $sign_str = " >= ";
       else if ($this->value == 2)
-        $sign_str = ">";
+        $sign_str = " > ";
       else if ($this->value == 3)
-        $sign_str = "<";
+        $sign_str = " < ";
       else
         Utils::die_error("Unexpected error when creating a continuous antecedent from string." . PHP_EOL);
       return $sign_str;
@@ -255,7 +255,7 @@ class ContinuousAntecedent extends Antecedent
      */
     function toString(bool $short = false) : string
     {
-        $sign_str = " " . $this->getSignString() . " ";
+        $sign_str = $this->getSignString();
 
         if ($short) {
             return "{$this->attribute->getName()}" . $sign_str .
@@ -333,13 +333,13 @@ class ContinuousAntecedent extends Antecedent
   {
     $sign_str = null;
     if ($this->value == 0)
-      $sign_str = " <= ";
+      $sign_str = "<=";
     else if ($this->value == 1)
-      $sign_str = " >= ";
+      $sign_str = ">=";
     else if ($this->value == 2)
-      $sign_str = " > ";
+      $sign_str = ">";
     else if ($this->value == 3)
-      $sign_str = " < ";
+      $sign_str = "<";
     else
       Utils::die_error("Unexpected error when creating a continuous antecedent from string." . PHP_EOL);
 

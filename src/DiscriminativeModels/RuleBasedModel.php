@@ -942,20 +942,20 @@ table.blueTable tfoot .links a{
       foreach ($jsonLogicRule["and"] as $i => $antecedent) {
         $sign = strval(array_keys($antecedent)[0]);
         $newSign = null;
-        if ($sign == "<=")
+        if ($sign == "<=" || $sign == " <= ")
           $newSign = ">";
-        else if ($sign == ">=")
+        else if ($sign == ">=" || $sign == " >= ")
           $newSign = "<";
-        else if ($sign == ">")
+        else if ($sign == ">" || $sign == " > ")
           $newSign = "<=";
-        else if ($sign == "<")
+        else if ($sign == "<" || $sign == " < ")
           $newSign = ">=";
-        else if ($sign == "==")
+        else if ($sign == "==" || $sign == " == ")
           $newSign = "!=";
-        else if ($sign == "!=")
+        else if ($sign == "!=" || $sign == " != ")
           $newSign = "==";
         else if ($sign != "and")
-          dd($sign);
+          dd("unexpected sign: $sign");
           //Utils::die_error("Unexpected error when inverting json logic rule. " . PHP_EOL);
         $newJsonLogicRule["and"][$i][$newSign] = $antecedent[$sign];
       }
@@ -1005,7 +1005,7 @@ table.blueTable tfoot .links a{
       foreach ($rulesArray as $ruleArray) {
         $antecedents = [];
         foreach ($ruleArray['antecedents'] as $antecedent) {
-          if ($antecedent['operator'] === '==') {
+          if ($antecedent['operator'] == "==" || $antecedent['operator'] == " == ") {
             $antecedents[] = DiscreteAntecedent::createFromArray($antecedent, $attributes);
           } else {
             $antecedents[] = ContinuousAntecedent::createFromArray($antecedent);

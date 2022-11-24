@@ -52,7 +52,6 @@ class PredictByIdentifier extends Command
     // dd(ModelVersion::orderByDesc('id'));
     // dd($modelVersion);
     $predictions = $db_fit->predictByIdentifier($idVal,[],$modelVersion->id, false, false);
-    //dd("It worked");
     dd($predictions);
   }
 }

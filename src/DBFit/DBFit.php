@@ -2096,18 +2096,18 @@ class DBFit
             foreach($storedUnactivatedAntecedentsGrouped as $g) {
                 foreach($g as $antecedent) {
                     // Invert antecedente (remember it didn't activate)
-                    if ($antecedent["operator"] == ">=") {
-                        $antecedent["operator"] = "<";
-                    } else if ($antecedent["operator"] == ">") {
-                        $antecedent["operator"] = "<=";
-                    }else if ($antecedent["operator"] == "<=") {
-                        $antecedent["operator"] = ">";
-                    }else if ($antecedent["operator"] == "<") {
-                        $antecedent["operator"] = ">=";
-                    }else if ($antecedent["operator"] == "==") {
-                        $antecedent["operator"] = "!=";
-                    }else if ($antecedent["operator"] == "!=") {
-                        $antecedent["operator"] = "==";
+                    if ($antecedent["operator"] == " >= ") {
+                        $antecedent["operator"] = " < ";
+                    } else if ($antecedent["operator"] == " > ") {
+                        $antecedent["operator"] = " <= ";
+                    }else if ($antecedent["operator"] == " <= ") {
+                        $antecedent["operator"] = " > ";
+                    }else if ($antecedent["operator"] == " < ") {
+                        $antecedent["operator"] = " >= ";
+                    }else if ($antecedent["operator"] == " == ") {
+                        $antecedent["operator"] = " != ";
+                    }else if ($antecedent["operator"] == " != ") {
+                        $antecedent["operator"] = " == ";
                     }
                     $storedUnactivatedAntecedents[] = $antecedent;
                 }
@@ -2136,22 +2136,22 @@ class DBFit
                             array_reduce($antecedents, function ($carry, $item) use ($operator) {
                             if (count($carry) == 0) {
                                 return [$item];
-                            } else if (in_array($operator, [">=", ">"])) {
+                            } else if (in_array($operator, [" >= ", " > "])) {
                                 $new_item = $item;
                                 // error_log(Utils::get_var_dump($carry[0]));
                                 $new_item["value"] = max($carry[0]["value"], $item["value"]);
                                 return [$new_item];
-                            } else if (in_array($operator, ["<=", "<"])) {
+                            } else if (in_array($operator, [" <= ", " < "])) {
                                 $new_item = $item;
                                 // error_log(Utils::get_var_dump($carry[0]));
                                 $new_item["value"] = min($carry[0]["value"], $item["value"]);
                                 return [$new_item];
-                            } else if (in_array($operator, ["=="])) { # Shouldn't happen. If it happens, it's because the item is the same.
+                            } else if (in_array($operator, [" == "])) { # Shouldn't happen. If it happens, it's because the item is the same.
                                 $new_item = $item;
                                 // $new_item["operator"] = "in";
                                 // $new_item["value"] = $carry[0]["value"] . ", " . $item["value"];
                                 return [$new_item];
-                            } else if (in_array($operator, ["!="])) {
+                            } else if (in_array($operator, [" != "])) {
                                 $new_item = $item;
                                 $new_item["operator"] = "not in";
                                 $new_item["value"] = $carry[0]["value"] . ", " . $item["value"];
@@ -2170,7 +2170,8 @@ class DBFit
                     if ($antecedent["operator"] == "not in") {
                         $antecedent["value"] = "{" . $antecedent["value"] . "}";
                     }
-                    $antecedent["operator"] = " " . $antecedent["operator"] . " ";
+                    // $antecedent["operator"] = " " . $antecedent["operator"] . " ";
+                    // $antecedent["operator"] = $antecedent["operator"];
                     return $antecedent;
                 }, $new_antecedents);
                 $new_rulesAntecedents = array_merge($new_rulesAntecedents, $new_antecedents);
@@ -3248,7 +3249,7 @@ class DBFit
         ];
         Utils::arr_set_value($this->models, $modelKeyPath, $node);
 
-        echo "setHierarchyModel(" . Utils::toString($recursionPath) . ")";
+        // echo "setHierarchyModel(" . Utils::toString($recursionPath) . ")";
         // echo get_var_dump($this->models);
     }
 
