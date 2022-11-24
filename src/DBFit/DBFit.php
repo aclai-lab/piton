@@ -1826,6 +1826,7 @@ class DBFit
             //print_r($this->hierarchy);
             ModelVersion::where("id", $idModelVersion)->update(["hierarchy" => json_encode($this->hierarchy)]);
         }
+
         return $erroroccurred;
     }
 

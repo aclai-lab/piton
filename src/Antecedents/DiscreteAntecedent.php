@@ -165,10 +165,10 @@ class DiscreteAntecedent extends Antecedent
     function toString(bool $short = false) : string
     {
         if ($short) {
-            return "{$this->attribute->getName()}" . ($this->sign == 0 ? " = " : " != ")
+            return "{$this->attribute->getName()}" . ($this->sign == 0 ? "=" : "!=")
               . "{$this->attribute->reprVal($this->value)}";
         } else {
-            return "DiscreteAntecedent: ({$this->attribute->getName()}" . ($this->sign == 0 ? " == " : " != ")
+            return "DiscreteAntecedent: ({$this->attribute->getName()}" . ($this->sign == 0 ? "==" : "!=")
               . "\"{$this->attribute->reprVal($this->value)}\") (maxInfoGain={$this->maxInfoGain}, "
               . "accuRate={$this->accuRate}, cover={$this->cover}, accu={$this->accu})";
         }
@@ -217,7 +217,7 @@ class DiscreteAntecedent extends Antecedent
     function serializeToJsonLogic() : array
     {
       return [
-        "==" => [
+        " == " => [
           "var" => $this->attribute->getName(),
           $this->attribute->reprVal($this->getValue())
         ]

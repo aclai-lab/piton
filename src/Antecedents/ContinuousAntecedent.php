@@ -333,13 +333,13 @@ class ContinuousAntecedent extends Antecedent
   {
     $sign_str = null;
     if ($this->value == 0)
-      $sign_str = "<=";
+      $sign_str = " <= ";
     else if ($this->value == 1)
-      $sign_str = ">=";
+      $sign_str = " >= ";
     else if ($this->value == 2)
-      $sign_str = ">";
+      $sign_str = " > ";
     else if ($this->value == 3)
-      $sign_str = "<";
+      $sign_str = " < ";
     else
       Utils::die_error("Unexpected error when creating a continuous antecedent from string." . PHP_EOL);
 
@@ -363,13 +363,13 @@ class ContinuousAntecedent extends Antecedent
         $attribute->setIndex($antecedentArray["feature_id"]);
         $antecedent = new ContinuousAntecedent($attribute);
         $sign_str = $antecedentArray["operator"];
-        if ($sign_str == " <= ")
+        if ($sign_str == "<=" || $sign_str == " <= ")
             $antecedent->setValue(0);
-        else if ($sign_str == " >= ")
+        else if ($sign_str == ">=" || $sign_str == " >= ")
             $antecedent->setValue(1);
-        else if ($sign_str == " > ")
+        else if ($sign_str == ">" || $sign_str == " > ")
             $antecedent->setValue(2);
-        else if ($sign_str == " < ")
+        else if ($sign_str == "<" || $sign_str == " < ")
             $antecedent->setValue(3);
         else
             Utils::die_error("Unexpected error when creating a continuous antecedent from array." . PHP_EOL
