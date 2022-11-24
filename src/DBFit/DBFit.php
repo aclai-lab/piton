@@ -2134,24 +2134,25 @@ class DBFit
                 foreach($by_operator as $operator => $antecedents) {
                     $new_antecedents = array_merge($new_antecedents,
                             array_reduce($antecedents, function ($carry, $item) use ($operator) {
+                            $item["operator"] = trim($item["operator"]);
                             if (count($carry) == 0) {
                                 return [$item];
-                            } else if (in_array($operator, [" >= ", " > "])) {
+                            } else if (in_array($operator, [" >= ", " > ", ">=", ">"])) {
                                 $new_item = $item;
                                 // error_log(Utils::get_var_dump($carry[0]));
                                 $new_item["value"] = max($carry[0]["value"], $item["value"]);
                                 return [$new_item];
-                            } else if (in_array($operator, [" <= ", " < "])) {
+                            } else if (in_array($operator, [" <= ", " < ", "<=", "<"])) {
                                 $new_item = $item;
                                 // error_log(Utils::get_var_dump($carry[0]));
                                 $new_item["value"] = min($carry[0]["value"], $item["value"]);
                                 return [$new_item];
-                            } else if (in_array($operator, [" == "])) { # Shouldn't happen. If it happens, it's because the item is the same.
+                            } else if (in_array($operator, [" == ", "=="])) { # Shouldn't happen. If it happens, it's because the item is the same.
                                 $new_item = $item;
                                 // $new_item["operator"] = "in";
                                 // $new_item["value"] = $carry[0]["value"] . ", " . $item["value"];
                                 return [$new_item];
-                            } else if (in_array($operator, [" != "])) {
+                            } else if (in_array($operator, [" != ", "!="])) {
                                 $new_item = $item;
                                 $new_item["operator"] = "not in";
                                 $new_item["value"] = $carry[0]["value"] . ", " . $item["value"];
@@ -2170,7 +2171,8 @@ class DBFit
                     if ($antecedent["operator"] == "not in") {
                         $antecedent["value"] = "{" . $antecedent["value"] . "}";
                     }
-                    // $antecedent["operator"] = " " . $antecedent["operator"] . " ";
+                    $antecedent["operator"] = trim($antecedent["operator"]);
+                    $antecedent["operator"] = " " . $antecedent["operator"] . " ";
                     // $antecedent["operator"] = $antecedent["operator"];
                     return $antecedent;
                 }, $new_antecedents);
