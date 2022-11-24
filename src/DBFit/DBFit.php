@@ -2797,16 +2797,16 @@ class DBFit
                 // // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath));
                 // $k = array_keys($this->hierarchy["hierarchyNodes"][$recursionLevel]);
                 // $attribute_name = $this->hierarchy["hierarchyNodes"][$recursionLevel][$k[$prob_name]]["attributes"][0]["name"];
-                if (true) {
-                    $tmp = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath);
-                    if ($tmp[0]->getName() != "Terapia_Calcio supplementazione" && $prob_name != 0) {
-                        // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$prob_name]->getName());
-                        // dd($prob_name);
-                        dd("aoeu");
-                        dd($tmp);
-                    }
-                    // TODO: $attribute_name = $prob_name;
-                }
+                // if (true) {
+                //     $tmp = $this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath);
+                //     if ($tmp[0]->getName() != "Terapia_Calcio supplementazione" && $prob_name != 0) {
+                //         // dd($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)[$prob_name]->getName());
+                //         // dd($prob_name);
+                //         // dd("aoeu");
+                //         // dd($tmp);
+                //     }
+                //     // TODO: $attribute_name = $prob_name;
+                // }
                 // dd(($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)));
                 // dd(array_keys($this->getColumnAttributes($this->outputColumns[$recursionLevel], $recursionPath)));
                 $attribute_name = $prob_name;
