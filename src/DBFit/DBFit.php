@@ -1296,7 +1296,7 @@ class DBFit
                     # Note: class attributes go last
                     $allAttributes[] = $outputAttribute;
                     $attributes[] = Attribute::createFromArray($outputAttribute);
-                    var_dump($attributes);
+                    // var_dump($attributes);
                 }
                 // dd($allAttributes);
 
